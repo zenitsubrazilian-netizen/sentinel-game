@@ -1,0 +1,14 @@
+# Variáveis de ambiente — NUNCA versionar
+.env
+
+# Sessão do WhatsApp — credenciais sensíveis
+auth/
+
+# Logo gerado dinamicamente
+data/logo.jpg
+
+# Dependências
+node_modules/
+
+# Logs
+*.log

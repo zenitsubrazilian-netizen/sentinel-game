@@ -1,0 +1,27 @@
+== INSTRUÇÕES PARA O handler.js ==
+
+1. DELETE os arquivos abaixo (comandos removidos):
+   - commands/resetmemory.js
+   - commands/confirmresetmemory.js
+   - commands/setmenu.js
+   - commands/setlogo.js
+   - commands/setprompt.js      (se existir)
+   - commands/viewprompt.js
+   - commands/tokens.js
+
+2. O handler já carrega comandos dinamicamente por nome de arquivo,
+   então basta deletar os arquivos acima para desativar os comandos.
+
+3. Para iniciar o scheduler, adicione no seu index.js / bot.js
+   (onde o sock é criado) após a conexão ser estabelecida:
+
+   const { startScheduler } = require('./utils/groupScheduler.js');
+
+   // Exemplo: passar os IDs dos grupos que devem ser gerenciados
+   // Pode ser um array fixo ou carregado de um arquivo de config
+   sock.ev.on('connection.update', ({ connection }) => {
+     if (connection === 'open') {
+       startScheduler(sock, []); // começa vazio; use !scheduler add nos grupos
+     }
+   });
+

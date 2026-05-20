@@ -1,0 +1,35 @@
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PATCH PARA index.js — SCHEDULER FIXO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Localize o bloco:
+
+  if (connection === 'open') {
+    console.log('[SISTEMA] ✅ Conectado ao WhatsApp');
+    
+    // Inicia o scheduler (só na primeira vez, depois só atualiza wsock)
+    if (!global._schedulerStarted) {
+      startScheduler([]);
+      global._schedulerStarted = true;
+    }
+  }
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+SUBSTITUA POR:
+
+  if (connection === 'open') {
+    console.log('[SISTEMA] ✅ Conectado ao WhatsApp');
+    
+    // Inicia o scheduler com o grupo fixo
+    if (!global._schedulerStarted) {
+      startScheduler(['120363426463059849@g.us']);
+      global._schedulerStarted = true;
+    }
+  }
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Isso garante que o grupo "🧲 Imã de Pessoas" esteja sempre
+no scheduler automaticamente ao iniciar o bot.
+

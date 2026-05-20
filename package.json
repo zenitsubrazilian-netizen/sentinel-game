@@ -1,0 +1,36 @@
+{
+  "name": "sentinel-bot",
+  "version": "2.0.0",
+  "description": "Sentinel-Bot v2.0.0 - Sistema avançado de IA, moderação, economia e gamificação para WhatsApp",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "keywords": [
+    "whatsapp",
+    "bot",
+    "baileys",
+    "ai",
+    "groq",
+    "economy",
+    "rpg",
+    "gamification"
+  ],
+  "author": "Murilo Dias",
+  "license": "MIT",
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.8",
+    "axios": "^1.16.1",
+    "dotenv": "^16.6.1",
+    "express": "^5.2.1",
+    "firebase-admin": "^13.10.0",
+    "groq-sdk": "^0.7.0",
+    "pino": "^9.5.0",
+    "socket.io": "^4.8.3",
+    "uuid": "^14.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

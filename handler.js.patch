@@ -1,0 +1,11 @@
+// Adicionar ao handler.js — imports no topo
+// const { handleAmongReply } = require('./events/amongusHandler.js');
+
+// Adicionar após o bloco do duo (step 6.9):
+// ── 6.9. AMONG US
+// try {
+//   const handledByAmong = await handleAmongReply(wsock, message, from, sender, body);
+//   if (handledByAmong) return;
+// } catch (err) {
+//   console.error('[HANDLER] Erro no amongReply:', err.message);
+// }

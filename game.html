@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>⚔️ Duel Arena</title>
+<style>
+:root{--bg:#0d0d1a;--card:#151528;--b:#252548;--pur:#7c3aed;--grn:#10b981;--blu:#3b82f6;--gold:#f59e0b;--red:#ef4444;--txt:#e2e8f0;--mut:#64748b}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:system-ui,sans-serif;display:flex;justify-content:center;min-height:100dvh}
+.wrap{width:100%;max-width:440px;padding:8px;display:flex;flex-direction:column;gap:7px}
+.card{background:var(--card);border:1px solid var(--b);border-radius:14px;padding:12px}
+.card.enemy{border-color:#3d1515}.card.me{border-color:#152840}
+.row{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:700;margin-bottom:8px}
+.sub{font-size:11px;color:var(--gold)}
+.blbl{display:flex;justify-content:space-between;font-size:11px;color:var(--mut);margin-bottom:2px}
+.bar{height:10px;background:#1e1e38;border-radius:5px;margin-bottom:5px;overflow:hidden}
+.bar.sm{height:6px}
+.bfill{height:100%;border-radius:5px;transition:width .4s}
+.hp  {background:linear-gradient(90deg,#7f1d1d,#ef4444)}
+.mana{background:linear-gradient(90deg,#1e3a8a,#3b82f6)}
+.ult {background:linear-gradient(90deg,#78350f,#f59e0b)}
+.srow{display:flex;gap:10px;font-size:11px;color:var(--mut);flex-wrap:wrap;margin-top:3px}
+.efx{font-size:10px;color:var(--gold);min-height:13px;margin-top:3px}
+.log{background:#080814;border:1px solid var(--b);border-radius:12px;padding:10px;max-height:150px;overflow-y:auto;font-size:11px;line-height:1.7}
+.log p{padding:0}.log .sep{color:var(--mut);font-size:10px;border-top:1px solid var(--b);margin:4px 0;padding-top:4px}
+.log::-webkit-scrollbar{width:3px}.log::-webkit-scrollbar-thumb{background:var(--b);border-radius:2px}
+.grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.btn{background:var(--card);border:1px solid var(--b);border-radius:10px;color:var(--txt);padding:10px 4px;font-size:11px;font-weight:600;cursor:pointer;text-align:center;transition:transform .1s;line-height:1.4;-webkit-tap-highlight-color:transparent}
+.btn:active{transform:scale(.94);background:#1e1e38}
+.btn.sp{border-color:var(--pur);color:#c4b5fd}.btn.ul{border-color:var(--gold);color:var(--gold)}
+.btn.w2{grid-column:span 2}.btn.w3{grid-column:span 3}
+.wait{text-align:center;padding:12px;color:var(--mut);font-size:13px;background:var(--card);border-radius:10px;border:1px dashed var(--b)}
+.hidden{display:none!important}
+/* Spells overlay */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:50;display:flex;align-items:flex-end;justify-content:center}
+.sp-panel{background:var(--card);border-radius:20px 20px 0 0;border:1px solid var(--b);padding:16px;width:100%;max-width:440px;max-height:70vh;overflow-y:auto}
+.sp-title{font-size:14px;font-weight:700;text-align:center;color:#c4b5fd;margin-bottom:12px}
+.sp-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.scard{background:#1a1a34;border:1px solid var(--b);border-radius:10px;padding:10px;cursor:pointer}
+.scard:active{opacity:.7}.scard.dis{opacity:.35;pointer-events:none}
+.si{font-size:20px}.sn{font-size:11px;font-weight:700;margin:3px 0 1px}.sd{font-size:10px;color:var(--mut)}.sc{font-size:10px;color:#60a5fa}
+.cls-btn{display:block;width:100%;margin-top:10px;padding:10px;background:#252548;border:none;border-radius:10px;color:var(--txt);font-size:13px;cursor:pointer}
+/* End */
+.end{text-align:center;padding:30px 16px;margin-top:10px}
+.end-e{font-size:50px;margin-bottom:8px}.end-t{font-size:22px;font-weight:800;margin-bottom:10px}
+.end-s{font-size:13px;color:var(--mut);line-height:2}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div id="loading" style="margin-top:40vh;text-align:center">
+  <div style="font-size:30px">⚔️</div>
+  <div style="margin-top:10px;color:var(--mut)">Conectando...</div>
+</div>
+
+<div id="battle" class="hidden">
+  <div class="card" style="flex-direction:row;display:flex;justify-content:space-between;align-items:center;padding:8px 12px">
+    <span style="font-size:13px;font-weight:700">⚔️ DUEL</span>
+    <span id="rbadge" style="background:var(--pur);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">Round 1</span>
+    <span id="rid" style="font-size:10px;opacity:.35"></span>
+  </div>
+
+  <div class="card enemy">
+    <div class="row"><span id="ename">🤖 Sentinel</span><span class="sub" id="eready"></span></div>
+    <div class="blbl"><span>❤️ HP</span><span id="ehp">120/120</span></div>
+    <div class="bar"><div id="ehpb" class="bfill hp" style="width:100%"></div></div>
+    <div class="blbl"><span>🔵 Mana</span><span id="emana">60/60</span></div>
+    <div class="bar"><div id="emanab" class="bfill mana" style="width:100%"></div></div>
+    <div class="srow"><span id="een">⚡ 50</span><span id="epot">🧪 2</span><span id="eult">✨ 0/100</span></div>
+    <div class="efx" id="eefx"></div>
+  </div>
+
+  <div class="log" id="log"><p style="color:var(--mut);text-align:center">⚔️ A batalha começa!</p></div>
+
+  <div class="card me">
+    <div class="row"><span id="myname">👤 Você</span><span class="sub" id="myready"></span></div>
+    <div class="blbl"><span>❤️ HP</span><span id="myhp">120/120</span></div>
+    <div class="bar"><div id="myhpb" class="bfill hp" style="width:100%"></div></div>
+    <div class="blbl"><span>🔵 Mana</span><span id="mymana">60/60</span></div>
+    <div class="bar"><div id="mymanab" class="bfill mana" style="width:100%"></div></div>
+    <div class="blbl"><span>✨ Ultimate</span><span id="myulttxt">0/100</span></div>
+    <div class="bar sm"><div id="myultb" class="bfill ult" style="width:0%"></div></div>
+    <div class="srow"><span id="myen">⚡ 50</span><span id="mypot">🧪 2</span></div>
+    <div class="efx" id="myefx"></div>
+  </div>
+
+  <div id="agrid" class="grid">
+    <button class="btn" onclick="act('ataque leve')">⚔️ Leve<br><small>8-15</small></button>
+    <button class="btn" onclick="act('ataque pesado')">💢 Pesado<br><small>20-32 -15⚡</small></button>
+    <button class="btn" onclick="act('defesa')">🛡️ Defesa<br><small>-50% dano</small></button>
+    <button class="btn" onclick="act('esquiva')">💨 Esquiva<br><small>40% evitar</small></button>
+    <button class="btn" onclick="act('contra-ataque')">↩️ Contra<br><small>-20⚡</small></button>
+    <button class="btn" onclick="act('break guard')">🔨 Break<br><small>-25⚡</small></button>
+    <button class="btn" onclick="act('focus')">🧘 Focus<br><small>+mana ⚡</small></button>
+    <button class="btn" onclick="act('usar item')">🧪 Poção<br><small>+30-45 HP</small></button>
+    <button class="btn ul" onclick="act('ultimate')">✨ ULTIMATE<br><small>45-65 dano</small></button>
+    <button class="btn sp w3" onclick="showSp()">🔮 Magia — escolher feitiço</button>
+  </div>
+  <div id="waitmsg" class="wait hidden">⏳ Aguardando oponente...</div>
+</div>
+
+<div id="endscreen" class="hidden">
+  <div class="end">
+    <div class="end-e" id="end-e">🏆</div>
+    <div class="end-t" id="end-t">Vitória!</div>
+    <div class="end-s" id="end-s"></div>
+  </div>
+  <div class="log" id="end-log" style="max-height:280px"></div>
+</div>
+
+</div><!-- wrap -->
+
+<!-- Spells -->
+<div id="spov" class="ov hidden" onclick="hideSp(event)">
+  <div class="sp-panel" onclick="event.stopPropagation()">
+    <div class="sp-title">🔮 Escolher Magia</div>
+    <div class="sp-grid" id="spgrid"></div>
+    <button class="cls-btn" onclick="hideSp()">✖ Fechar</button>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const SP_DATA={
+  bola_de_fogo:{name:'Bola de Fogo',  icon:'🔥',cost:25,desc:'20-30 dano + queimadura'},
+  raio:        {name:'Raio',          icon:'⚡',cost:30,desc:'25-40 dano + stun'},
+  gelo:        {name:'Tempestade Gelo',icon:'🧊',cost:20,desc:'15-22 dano + congela'},
+  veneno:      {name:'Veneno',        icon:'☠️',cost:15,desc:'8-12 dano + veneno 3r'},
+  cura:        {name:'Cura Divina',   icon:'💚',cost:20,desc:'Cura 30-45 HP'},
+  escudo_magico:{name:'Escudo Mágico',icon:'🛡️',cost:18,desc:'-70% dano 2r'},
+  furia:       {name:'Fúria',         icon:'😤',cost:20,desc:'+10 dano 2r'},
+  fraqueza:    {name:'Fraqueza',      icon:'💫',cost:15,desc:'Inimigo -8 dano'},
+  silencio:    {name:'Silêncio',      icon:'🔇',cost:20,desc:'Bloqueia magias 2r'},
+  correntes:   {name:'Correntes',     icon:'⛓️',cost:25,desc:'5-10 dano + bloqueia esquiva'},
+};
+const params=new URLSearchParams(location.search);
+const ROOM=params.get('room'), PLAYER=params.get('player');
+const ENEMY=PLAYER==='p1'?'p2':'p1';
+if(!ROOM||!['p1','p2'].includes(PLAYER)){
+  document.getElementById('loading').innerHTML='<p style="color:red;padding:20px">⚠️ Link inválido.</p>'; throw 0;
+}
+const socket=io();
+let state=null, sent=false;
+
+socket.emit('join',{roomId:ROOM,player:PLAYER});
+socket.on('state',s=>{ state=s; render(); });
+socket.on('error',msg=>{ document.getElementById('loading').innerHTML=`<p style="color:red;padding:20px">⚠️ ${msg}</p>`; });
+
+const el=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const pct=(v,m)=>(Math.max(0,v)/m*100).toFixed(1)+'%';
+
+function render(){
+  if(!state) return;
+  el('loading').classList.add('hidden');
+  if(state.phase==='ended'){ renderEnd(); return; }
+  el('battle').classList.remove('hidden');
+  el('rbadge').textContent=`Round ${state.round}`;
+  el('rid').textContent=ROOM;
+  const me=state[PLAYER], en=state[ENEMY];
+  el('ename').textContent=en?.isBot?'🤖 Sentinel':'👤 Oponente';
+  if(me&&en){
+    el('ehp').textContent  =`${Math.max(0,en.hp)}/${en.maxHp}`;
+    el('ehpb').style.width =pct(en.hp,en.maxHp);
+    el('emana').textContent=`${Math.max(0,en.mana)}/${en.maxMana}`;
+    el('emanab').style.width=pct(en.mana,en.maxMana);
+    el('een').textContent  =`⚡ ${Math.max(0,en.energy||0)}`;
+    el('epot').textContent =`🧪 ${en.potions||0}`;
+    el('eult').textContent =`✨ ${Math.min(100,en.ultimate||0)}/100`;
+    el('eefx').textContent =(en.effects||[]).filter(e=>e.rounds>0).map(e=>e.type).join(' ')||'';
+    el('eready').textContent=en.action?'✅':'';
+
+    el('myhp').textContent  =`${Math.max(0,me.hp)}/${me.maxHp}`;
+    el('myhpb').style.width =pct(me.hp,me.maxHp);
+    el('mymana').textContent=`${Math.max(0,me.mana)}/${me.maxMana}`;
+    el('mymanab').style.width=pct(me.mana,me.maxMana);
+    el('myulttxt').textContent=`${Math.min(100,me.ultimate||0)}/100`;
+    el('myultb').style.width=Math.min(100,me.ultimate||0)+'%';
+    el('myen').textContent  =`⚡ ${Math.max(0,me.energy||0)}`;
+    el('mypot').textContent =`🧪 ${me.potions||0}`;
+    el('myefx').textContent =(me.effects||[]).filter(e=>e.rounds>0).map(e=>e.type).join(' ')||'';
+    el('myready').textContent=me.action?'✅ aguardando':'';
+  }
+  const acted=me?.action!==null&&me?.action!==undefined;
+  el('agrid').classList.toggle('hidden', acted);
+  el('waitmsg').classList.toggle('hidden', !acted);
+  if(!acted) sent=false;
+  const logEl=el('log');
+  if(state.log?.length) logEl.innerHTML=state.log.slice(-50).map(l=>l.startsWith('━')?`<p class="sep">${esc(l)}</p>`:`<p>${esc(l)}</p>`).join('');
+  logEl.scrollTop=logEl.scrollHeight;
+}
+
+function renderEnd(){
+  el('battle').classList.add('hidden');
+  el('endscreen').classList.remove('hidden');
+  const me=state[PLAYER];
+  if(state.winner==='draw'){ el('end-e').textContent='🤝'; el('end-t').textContent='EMPATE!'; el('end-s').textContent='Ambos caíram!'; }
+  else if(state.winner===PLAYER){ el('end-e').textContent='🏆'; el('end-t').textContent='VITÓRIA!'; el('end-s').innerHTML=`❤️ HP restante: ${Math.max(0,me?.hp||0)}/${me?.maxHp||120}<br>🎉 +100 XP`; }
+  else { el('end-e').textContent='💀'; el('end-t').textContent='DERROTA'; el('end-s').textContent='Você perdeu. +25 XP'; }
+  if(state.log?.length) el('end-log').innerHTML=state.log.slice(-60).map(l=>`<p>${esc(l)}</p>`).join('');
+}
+
+window.act=action=>{ if(sent) return; sent=true; socket.emit('action',{roomId:ROOM,player:PLAYER,action}); };
+
+window.showSp=()=>{
+  const me=state?.[PLAYER];
+  if(!me) return;
+  const grid=el('spgrid'); grid.innerHTML='';
+  for(const[id,s] of Object.entries(SP_DATA)){
+    const cost=Math.max(0,s.cost-(me.manaCostReduction||0));
+    const cd=((me.spellCooldowns||{})[id]||0)>0;
+    const nm=(me.mana||0)<cost;
+    const d=document.createElement('div');
+    d.className=`scard${cd||nm?' dis':''}`;
+    d.innerHTML=`<div class="si">${s.icon}</div><div class="sn">${s.name}</div><div class="sd">${s.desc}</div><div class="sc">🔵 ${cost}${cd?` (CD)`:''}${(!cd&&nm)?' (sem mana)':''}</div>`;
+    if(!cd&&!nm) d.onclick=()=>{ act(`magia: ${id}`); hideSp(); };
+    grid.appendChild(d);
+  }
+  el('spov').classList.remove('hidden');
+};
+window.hideSp=e=>{ if(!e||e.target===el('spov')) el('spov').classList.add('hidden'); };
+</script>
+</body>
+</html>
