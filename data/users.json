@@ -1,14 +1,14 @@
 {
   "115809867276438@lid": {
-    "xp": 1300,
+    "xp": 1306,
     "level": 14,
     "coins": 2796,
     "streak": 0,
     "lastDaily": 1779316799821,
     "lastWeekly": 1778936867368,
-    "lastXP": 1779316890886,
-    "lastActive": 1779316890886,
-    "messages": 1081,
+    "lastXP": 1779318124960,
+    "lastActive": 1779318124961,
+    "messages": 1082,
     "inventory": {
       "frames": [
         "default",
@@ -53,8 +53,8 @@
       "legend_speaker"
     ],
     "stats": {
-      "totalXP": 31527,
-      "totalMessages": 1081,
+      "totalXP": 31533,
+      "totalMessages": 1082,
       "totalCoins": 92679,
       "minigamesWon": 235,
       "eventsWon": 0,
@@ -1249,15 +1249,15 @@
     }
   },
   "238430999076991@lid": {
-    "xp": 405,
+    "xp": 421,
     "level": 3,
     "coins": 727,
     "streak": 1,
     "lastDaily": 1779230412540,
     "lastWeekly": null,
-    "lastXP": 1779237013912,
-    "lastActive": 1779237013912,
-    "messages": 45,
+    "lastXP": 1779318408094,
+    "lastActive": 1779318408094,
+    "messages": 46,
     "inventory": {
       "frames": [
         "default"
@@ -1278,8 +1278,8 @@
       "first_win"
     ],
     "stats": {
-      "totalXP": 787,
-      "totalMessages": 45,
+      "totalXP": 803,
+      "totalMessages": 46,
       "totalCoins": 977,
       "minigamesWon": 5,
       "eventsWon": 0,
