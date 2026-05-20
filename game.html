@@ -32,27 +32,35 @@ body{background:var(--bg);color:var(--txt);font-family:system-ui,sans-serif;disp
 .btn.w2{grid-column:span 2}.btn.w3{grid-column:span 3}
 .wait{text-align:center;padding:12px;color:var(--mut);font-size:13px;background:var(--card);border-radius:10px;border:1px dashed var(--b)}
 .hidden{display:none!important}
-/* Spells overlay */
+/* Overlay de magias */
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:50;display:flex;align-items:flex-end;justify-content:center}
 .sp-panel{background:var(--card);border-radius:20px 20px 0 0;border:1px solid var(--b);padding:16px;width:100%;max-width:440px;max-height:70vh;overflow-y:auto}
 .sp-title{font-size:14px;font-weight:700;text-align:center;color:#c4b5fd;margin-bottom:12px}
 .sp-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
-.scard{background:#1a1a34;border:1px solid var(--b);border-radius:10px;padding:10px;cursor:pointer}
-.scard:active{opacity:.7}.scard.dis{opacity:.35;pointer-events:none}
+.scard{background:#1a1a34;border:1px solid var(--b);border-radius:10px;padding:10px;cursor:pointer;transition:opacity .15s}
+.scard:active{opacity:.6}.scard.dis{opacity:.35;pointer-events:none}
 .si{font-size:20px}.sn{font-size:11px;font-weight:700;margin:3px 0 1px}.sd{font-size:10px;color:var(--mut)}.sc{font-size:10px;color:#60a5fa}
+/* MELHORIA: badge de CD em vermelho */
+.cd-badge{color:#f87171;font-weight:700}
 .cls-btn{display:block;width:100%;margin-top:10px;padding:10px;background:#252548;border:none;border-radius:10px;color:var(--txt);font-size:13px;cursor:pointer}
-/* End */
+/* Tela final */
 .end{text-align:center;padding:30px 16px;margin-top:10px}
 .end-e{font-size:50px;margin-bottom:8px}.end-t{font-size:22px;font-weight:800;margin-bottom:10px}
 .end-s{font-size:13px;color:var(--mut);line-height:2}
+/* MELHORIA: banner de reconexão */
+#reconn{position:fixed;top:0;left:0;right:0;background:#7c3aed;color:#fff;text-align:center;padding:8px;font-size:12px;font-weight:700;z-index:100;display:none}
 </style>
 </head>
 <body>
+
+<!-- Banner de reconexão -->
+<div id="reconn">🔄 Reconectando...</div>
+
 <div class="wrap">
 
 <div id="loading" style="margin-top:40vh;text-align:center">
   <div style="font-size:30px">⚔️</div>
-  <div style="margin-top:10px;color:var(--mut)">Conectando...</div>
+  <div id="loading-msg" style="margin-top:10px;color:var(--mut)">Conectando...</div>
 </div>
 
 <div id="battle" class="hidden">
@@ -62,6 +70,7 @@ body{background:var(--bg);color:var(--txt);font-family:system-ui,sans-serif;disp
     <span id="rid" style="font-size:10px;opacity:.35"></span>
   </div>
 
+  <!-- Inimigo -->
   <div class="card enemy">
     <div class="row"><span id="ename">🤖 Sentinel</span><span class="sub" id="eready"></span></div>
     <div class="blbl"><span>❤️ HP</span><span id="ehp">120/120</span></div>
@@ -74,6 +83,7 @@ body{background:var(--bg);color:var(--txt);font-family:system-ui,sans-serif;disp
 
   <div class="log" id="log"><p style="color:var(--mut);text-align:center">⚔️ A batalha começa!</p></div>
 
+  <!-- Jogador -->
   <div class="card me">
     <div class="row"><span id="myname">👤 Você</span><span class="sub" id="myready"></span></div>
     <div class="blbl"><span>❤️ HP</span><span id="myhp">120/120</span></div>
@@ -112,7 +122,7 @@ body{background:var(--bg);color:var(--txt);font-family:system-ui,sans-serif;disp
 
 </div><!-- wrap -->
 
-<!-- Spells -->
+<!-- Overlay de magias -->
 <div id="spov" class="ov hidden" onclick="hideSp(event)">
   <div class="sp-panel" onclick="event.stopPropagation()">
     <div class="sp-title">🔮 Escolher Magia</div>
@@ -123,104 +133,197 @@ body{background:var(--bg);color:var(--txt);font-family:system-ui,sans-serif;disp
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
-const SP_DATA={
-  bola_de_fogo:{name:'Bola de Fogo',  icon:'🔥',cost:25,desc:'20-30 dano + queimadura'},
-  raio:        {name:'Raio',          icon:'⚡',cost:30,desc:'25-40 dano + stun'},
-  gelo:        {name:'Tempestade Gelo',icon:'🧊',cost:20,desc:'15-22 dano + congela'},
-  veneno:      {name:'Veneno',        icon:'☠️',cost:15,desc:'8-12 dano + veneno 3r'},
-  cura:        {name:'Cura Divina',   icon:'💚',cost:20,desc:'Cura 30-45 HP'},
-  escudo_magico:{name:'Escudo Mágico',icon:'🛡️',cost:18,desc:'-70% dano 2r'},
-  furia:       {name:'Fúria',         icon:'😤',cost:20,desc:'+10 dano 2r'},
-  fraqueza:    {name:'Fraqueza',      icon:'💫',cost:15,desc:'Inimigo -8 dano'},
-  silencio:    {name:'Silêncio',      icon:'🔇',cost:20,desc:'Bloqueia magias 2r'},
-  correntes:   {name:'Correntes',     icon:'⛓️',cost:25,desc:'5-10 dano + bloqueia esquiva'},
+// ── Dados de feitiços (espelho do servidor) ────────────────
+const SP_DATA = {
+  bola_de_fogo:  { name:'Bola de Fogo',   icon:'🔥', cost:25, desc:'20-30 dano + queimadura' },
+  raio:          { name:'Raio',            icon:'⚡', cost:30, desc:'25-40 dano + stun'       },
+  gelo:          { name:'Tempestade Gelo', icon:'🧊', cost:20, desc:'15-22 dano + congela'    },
+  veneno:        { name:'Veneno',          icon:'☠️', cost:15, desc:'8-12 dano + veneno 3r'   },
+  cura:          { name:'Cura Divina',     icon:'💚', cost:20, desc:'Cura 30-45 HP'           },
+  escudo_magico: { name:'Escudo Mágico',   icon:'🛡️', cost:18, desc:'-70% dano 2r'            },
+  furia:         { name:'Fúria',           icon:'😤', cost:20, desc:'+10 dano 2r'             },
+  fraqueza:      { name:'Fraqueza',        icon:'💫', cost:15, desc:'Inimigo -8 dano'          },
+  silencio:      { name:'Silêncio',        icon:'🔇', cost:20, desc:'Bloqueia magias 2r'       },
+  correntes:     { name:'Correntes',       icon:'⛓️', cost:25, desc:'5-10 dano + bloqueia esquiva' },
 };
-const params=new URLSearchParams(location.search);
-const ROOM=params.get('room'), PLAYER=params.get('player');
-const ENEMY=PLAYER==='p1'?'p2':'p1';
-if(!ROOM||!['p1','p2'].includes(PLAYER)){
-  document.getElementById('loading').innerHTML='<p style="color:red;padding:20px">⚠️ Link inválido.</p>'; throw 0;
+
+// ── Parâmetros da URL ──────────────────────────────────────
+const params = new URLSearchParams(location.search);
+const ROOM   = params.get('room');
+const PLAYER = params.get('player');
+const ENEMY  = PLAYER === 'p1' ? 'p2' : 'p1';
+
+if (!ROOM || !['p1','p2'].includes(PLAYER)) {
+  document.getElementById('loading').innerHTML =
+    '<p style="color:red;padding:20px">⚠️ Link inválido. Use o link enviado pelo bot no PV.</p>';
+  throw new Error('invalid link');
 }
-const socket=io();
-let state=null, sent=false;
 
-socket.emit('join',{roomId:ROOM,player:PLAYER});
-socket.on('state',s=>{ state=s; render(); });
-socket.on('error',msg=>{ document.getElementById('loading').innerHTML=`<p style="color:red;padding:20px">⚠️ ${msg}</p>`; });
+// ── Socket com reconexão automática ───────────────────────
+const socket = io("https://sentinel-game-3.onrender.com", { reconnectionDelay: 1500, reconnectionAttempts: 10 });
+let state = null;
+let sent  = false;
 
-const el=id=>document.getElementById(id);
-const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-const pct=(v,m)=>(Math.max(0,v)/m*100).toFixed(1)+'%';
+socket.on('connect', () => {
+  document.getElementById('reconn').style.display = 'none';
+  socket.emit('join', { roomId: ROOM, player: PLAYER });
+});
 
-function render(){
-  if(!state) return;
+// CORREÇÃO: reconexão automática com feedback visual
+socket.on('disconnect', () => {
+  document.getElementById('reconn').style.display = 'block';
+});
+socket.on('reconnect', () => {
+  document.getElementById('reconn').style.display = 'none';
+  socket.emit('join', { roomId: ROOM, player: PLAYER });
+});
+socket.on('reconnect_failed', () => {
+  document.getElementById('reconn').textContent = '❌ Falha na conexão. Recarregue a página.';
+});
+
+socket.on('state', s => { state = s; render(); });
+socket.on('error', msg => {
+  document.getElementById('loading-msg').textContent = `⚠️ ${msg}`;
+  document.getElementById('loading-msg').style.color = '#ef4444';
+});
+
+// ── Utilitários DOM ────────────────────────────────────────
+const el  = id => document.getElementById(id);
+const esc = s  => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const pct = (v, m) => (Math.max(0, v) / m * 100).toFixed(1) + '%';
+
+// ── Renderização principal ─────────────────────────────────
+function render() {
+  if (!state) return;
   el('loading').classList.add('hidden');
-  if(state.phase==='ended'){ renderEnd(); return; }
-  el('battle').classList.remove('hidden');
-  el('rbadge').textContent=`Round ${state.round}`;
-  el('rid').textContent=ROOM;
-  const me=state[PLAYER], en=state[ENEMY];
-  el('ename').textContent=en?.isBot?'🤖 Sentinel':'👤 Oponente';
-  if(me&&en){
-    el('ehp').textContent  =`${Math.max(0,en.hp)}/${en.maxHp}`;
-    el('ehpb').style.width =pct(en.hp,en.maxHp);
-    el('emana').textContent=`${Math.max(0,en.mana)}/${en.maxMana}`;
-    el('emanab').style.width=pct(en.mana,en.maxMana);
-    el('een').textContent  =`⚡ ${Math.max(0,en.energy||0)}`;
-    el('epot').textContent =`🧪 ${en.potions||0}`;
-    el('eult').textContent =`✨ ${Math.min(100,en.ultimate||0)}/100`;
-    el('eefx').textContent =(en.effects||[]).filter(e=>e.rounds>0).map(e=>e.type).join(' ')||'';
-    el('eready').textContent=en.action?'✅':'';
 
-    el('myhp').textContent  =`${Math.max(0,me.hp)}/${me.maxHp}`;
-    el('myhpb').style.width =pct(me.hp,me.maxHp);
-    el('mymana').textContent=`${Math.max(0,me.mana)}/${me.maxMana}`;
-    el('mymanab').style.width=pct(me.mana,me.maxMana);
-    el('myulttxt').textContent=`${Math.min(100,me.ultimate||0)}/100`;
-    el('myultb').style.width=Math.min(100,me.ultimate||0)+'%';
-    el('myen').textContent  =`⚡ ${Math.max(0,me.energy||0)}`;
-    el('mypot').textContent =`🧪 ${me.potions||0}`;
-    el('myefx').textContent =(me.effects||[]).filter(e=>e.rounds>0).map(e=>e.type).join(' ')||'';
-    el('myready').textContent=me.action?'✅ aguardando':'';
+  if (state.phase === 'ended') { renderEnd(); return; }
+
+  el('battle').classList.remove('hidden');
+  el('rbadge').textContent = `Round ${state.round}`;
+  el('rid').textContent    = ROOM;
+
+  const me = state[PLAYER];
+  const en = state[ENEMY];
+
+  el('ename').textContent = en?.isBot ? '🤖 Sentinel' : '👤 Oponente';
+
+  if (me && en) {
+    // Inimigo
+    el('ehp').textContent    = `${Math.max(0, en.hp)}/${en.maxHp}`;
+    el('ehpb').style.width   = pct(en.hp, en.maxHp);
+    el('emana').textContent  = `${Math.max(0, en.mana)}/${en.maxMana}`;
+    el('emanab').style.width = pct(en.mana, en.maxMana);
+    el('een').textContent    = `⚡ ${Math.max(0, en.energy || 0)}`;
+    el('epot').textContent   = `🧪 ${en.potions || 0}`;
+    el('eult').textContent   = `✨ ${Math.min(100, en.ultimate || 0)}/100`;
+    el('eefx').textContent   = (en.effects || []).filter(e => e.rounds > 0).map(e => e.type).join(' ') || '';
+    el('eready').textContent = en.action ? '✅' : '';
+
+    // Jogador
+    el('myhp').textContent     = `${Math.max(0, me.hp)}/${me.maxHp}`;
+    el('myhpb').style.width    = pct(me.hp, me.maxHp);
+    el('mymana').textContent   = `${Math.max(0, me.mana)}/${me.maxMana}`;
+    el('mymanab').style.width  = pct(me.mana, me.maxMana);
+    el('myulttxt').textContent = `${Math.min(100, me.ultimate || 0)}/100`;
+    el('myultb').style.width   = Math.min(100, me.ultimate || 0) + '%';
+    el('myen').textContent     = `⚡ ${Math.max(0, me.energy || 0)}`;
+    el('mypot').textContent    = `🧪 ${me.potions || 0}`;
+    el('myefx').textContent    = (me.effects || []).filter(e => e.rounds > 0).map(e => e.type).join(' ') || '';
+    el('myready').textContent  = me.action ? '✅ aguardando...' : '';
   }
-  const acted=me?.action!==null&&me?.action!==undefined;
+
+  const acted = me?.action !== null && me?.action !== undefined;
   el('agrid').classList.toggle('hidden', acted);
   el('waitmsg').classList.toggle('hidden', !acted);
-  if(!acted) sent=false;
-  const logEl=el('log');
-  if(state.log?.length) logEl.innerHTML=state.log.slice(-50).map(l=>l.startsWith('━')?`<p class="sep">${esc(l)}</p>`:`<p>${esc(l)}</p>`).join('');
-  logEl.scrollTop=logEl.scrollHeight;
+  if (!acted) sent = false;
+
+  // Log de batalha
+  const logEl = el('log');
+  if (state.log?.length) {
+    logEl.innerHTML = state.log.slice(-50)
+      .map(l => l.startsWith('━')
+        ? `<p class="sep">${esc(l)}</p>`
+        : `<p>${esc(l)}</p>`)
+      .join('');
+    logEl.scrollTop = logEl.scrollHeight;
+  }
 }
 
-function renderEnd(){
+// ── Tela de fim de jogo ────────────────────────────────────
+function renderEnd() {
   el('battle').classList.add('hidden');
   el('endscreen').classList.remove('hidden');
-  const me=state[PLAYER];
-  if(state.winner==='draw'){ el('end-e').textContent='🤝'; el('end-t').textContent='EMPATE!'; el('end-s').textContent='Ambos caíram!'; }
-  else if(state.winner===PLAYER){ el('end-e').textContent='🏆'; el('end-t').textContent='VITÓRIA!'; el('end-s').innerHTML=`❤️ HP restante: ${Math.max(0,me?.hp||0)}/${me?.maxHp||120}<br>🎉 +100 XP`; }
-  else { el('end-e').textContent='💀'; el('end-t').textContent='DERROTA'; el('end-s').textContent='Você perdeu. +25 XP'; }
-  if(state.log?.length) el('end-log').innerHTML=state.log.slice(-60).map(l=>`<p>${esc(l)}</p>`).join('');
+  const me = state[PLAYER];
+  if (state.winner === 'draw') {
+    el('end-e').textContent = '🤝';
+    el('end-t').textContent = 'EMPATE!';
+    el('end-s').textContent = 'Ambos caíram!';
+  } else if (state.winner === PLAYER) {
+    el('end-e').textContent = '🏆';
+    el('end-t').textContent = 'VITÓRIA!';
+    el('end-s').innerHTML   = `❤️ HP restante: ${Math.max(0, me?.hp || 0)}/${me?.maxHp || 120}<br>🎉 +100 XP`;
+  } else {
+    el('end-e').textContent = '💀';
+    el('end-t').textContent = 'DERROTA';
+    el('end-s').textContent = 'Você perdeu. +25 XP';
+  }
+  if (state.log?.length)
+    el('end-log').innerHTML = state.log.slice(-60).map(l => `<p>${esc(l)}</p>`).join('');
 }
 
-window.act=action=>{ if(sent) return; sent=true; socket.emit('action',{roomId:ROOM,player:PLAYER,action}); };
+// ── Enviar ação ────────────────────────────────────────────
+// CORREÇÃO: guarda contra jogo encerrado e duplo clique
+window.act = action => {
+  if (sent || !state || state.phase !== 'fighting') return;
+  sent = true;
+  socket.emit('action', { roomId: ROOM, player: PLAYER, action });
+};
 
-window.showSp=()=>{
-  const me=state?.[PLAYER];
-  if(!me) return;
-  const grid=el('spgrid'); grid.innerHTML='';
-  for(const[id,s] of Object.entries(SP_DATA)){
-    const cost=Math.max(0,s.cost-(me.manaCostReduction||0));
-    const cd=((me.spellCooldowns||{})[id]||0)>0;
-    const nm=(me.mana||0)<cost;
-    const d=document.createElement('div');
-    d.className=`scard${cd||nm?' dis':''}`;
-    d.innerHTML=`<div class="si">${s.icon}</div><div class="sn">${s.name}</div><div class="sd">${s.desc}</div><div class="sc">🔵 ${cost}${cd?` (CD)`:''}${(!cd&&nm)?' (sem mana)':''}</div>`;
-    if(!cd&&!nm) d.onclick=()=>{ act(`magia: ${id}`); hideSp(); };
+// ── Painel de magias ───────────────────────────────────────
+window.showSp = () => {
+  const me = state?.[PLAYER];
+  if (!me || state?.phase !== 'fighting') return;
+
+  const grid = el('spgrid');
+  grid.innerHTML = '';
+
+  for (const [id, s] of Object.entries(SP_DATA)) {
+    const cost = Math.max(0, s.cost - (me.manaCostReduction || 0));
+    const cdLeft = (me.spellCooldowns || {})[id] || 0;  // CORREÇÃO: rounds restantes
+    const noMana = (me.mana || 0) < cost;
+    const disabled = cdLeft > 0 || noMana;
+
+    const d = document.createElement('div');
+    d.className = `scard${disabled ? ' dis' : ''}`;
+
+    // CORREÇÃO: mostra rounds restantes de CD numericamente
+    let costLabel = `🔵 ${cost}`;
+    if (cdLeft > 0) {
+      costLabel += ` <span class="cd-badge">(CD: ${cdLeft}r)</span>`;
+    } else if (noMana) {
+      costLabel += ` <span style="color:#f87171">(sem mana)</span>`;
+    }
+
+    d.innerHTML = `
+      <div class="si">${s.icon}</div>
+      <div class="sn">${s.name}</div>
+      <div class="sd">${s.desc}</div>
+      <div class="sc">${costLabel}</div>
+    `;
+
+    if (!disabled) {
+      d.onclick = () => { act(`magia: ${id}`); hideSp(); };
+    }
     grid.appendChild(d);
   }
+
   el('spov').classList.remove('hidden');
 };
-window.hideSp=e=>{ if(!e||e.target===el('spov')) el('spov').classList.add('hidden'); };
+
+window.hideSp = e => {
+  if (!e || e.target === el('spov')) el('spov').classList.add('hidden');
+};
 </script>
 </body>
 </html>
