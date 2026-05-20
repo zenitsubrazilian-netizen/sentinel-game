@@ -6,7 +6,7 @@
 // ============================================================
 
 module.exports = {
-  VERSION:         '2.5.5',
+  VERSION:         '3.0.0',
   BOT_NAME:        'Sentinel-Bot',
   MAIN_GROUP:      '120363426463059849@g.us',
   SENTINEL_PREFIX: '*Sentinel 🛡:*\n',
