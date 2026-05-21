@@ -4,10 +4,65 @@ const axios = require('axios');
 const SERVER = 'https://sentinel-game-3.onrender.com';
 
 let getBattleBonus = () => ({});
-try { getBattleBonus = require('../utils/shop.js').getBattleBonus; } catch (_) {}
+let addXP          = () => {};
+let removeXP       = () => {};
+try { getBattleBonus = require('../utils/shop.js').getBattleBonus; }    catch (_) {}
+try { ({ addXP, removeXP } = require('../utils/economy.js')); }         catch (_) {}
 
 const DIFFS  = ['easy', 'medium', 'hard'];
 const genUrl = (roomId, player) => `${SERVER}/game?room=${roomId}&player=${player}`;
+
+// ─── Polling: verifica resultado e concede/remove XP ─────────────────────────
+function pollResult(sock, from, roomId, p1Jid, p2Jid) {
+  const MAX   = 25;   // 25 tentativas × 60s = 25 min
+  let   tries = 0;
+
+  const timer = setInterval(async () => {
+    tries++;
+    if (tries > MAX) { clearInterval(timer); return; }
+
+    try {
+      const { data } = await axios.get(`${SERVER}/room/${roomId}/result`, { timeout: 8000 });
+      if (!data.ended) return;
+
+      clearInterval(timer);
+
+      let msgLines = [`━━━━━━━━━━━━━━━━━━`, `⚔️ *RESULTADO DO DUELO WEB*`, `━━━━━━━━━━━━━━━━━━`, ``];
+      const mentions = [p1Jid, p2Jid].filter(j => j && j !== 'sentinel@s.whatsapp.net');
+
+      if (data.winner === 'draw') {
+        if (!data.p1IsBot) addXP(data.p1Jid, 20, 'duel_draw_web');
+        if (!data.p2IsBot) addXP(data.p2Jid, 20, 'duel_draw_web');
+        msgLines.push(`🤝 *EMPATE!* Ambos recebem _+20 XP_`);
+
+      } else {
+        const winnerJid = data.winner === 'p1' ? data.p1Jid : data.p2Jid;
+        const loserJid  = data.winner === 'p1' ? data.p2Jid : data.p1Jid;
+        const winnerBot = data.winner === 'p1' ? data.p1IsBot : data.p2IsBot;
+        const loserBot  = data.winner === 'p1' ? data.p2IsBot : data.p1IsBot;
+
+        if (!winnerBot) addXP(winnerJid, 100, 'duel_win_web');
+        if (!loserBot)  removeXP(loserJid, 100);
+
+        const wLabel = winnerBot ? '🤖 Sentinel' : `@${winnerJid.split('@')[0]}`;
+        const lLabel = loserBot  ? '🤖 Sentinel' : `@${loserJid.split('@')[0]}`;
+
+        msgLines.push(
+          `🏆 ${wLabel} *venceu!*`,
+          ``,
+          `📈 ${wLabel}: _+100 XP_`,
+          `📉 ${lLabel}: _-100 XP_`,
+        );
+      }
+
+      msgLines.push(``, `━━━━━━━━━━━━━━━━━━`);
+      await sock.sendMessage(from, { text: msgLines.join('\n'), mentions }).catch(() => {});
+
+    } catch (_) {
+      // sala ainda não encerrada ou erro de rede — tenta novamente
+    }
+  }, 60_000);
+}
 
 module.exports = {
   name: 'duel',
@@ -27,7 +82,7 @@ module.exports = {
         a.replace(/^@/, '').toLowerCase() === 'sentinel'
       );
 
-      // ── VS BOT ────────────────────────────────────────────────────────────
+      // ── VS BOT ───────────────────────────────────────────────────────────
       if (vsBot) {
         const diff = args.find(a => DIFFS.includes(a.toLowerCase()))?.toLowerCase() || 'medium';
 
@@ -43,20 +98,24 @@ module.exports = {
           return sock.sendMessage(from, { text: '❌ Servidor de duelos indisponível. Tente novamente.' });
         }
 
-        const link = genUrl(data.roomId, 'p1');
-        const diffLabel = { easy: '🟢 Fácil', medium: '🟡 Médio', hard: '🔴 Difícil' }[diff];
+        const link       = genUrl(data.roomId, 'p1');
+        const diffLabel  = { easy: '🟢 Fácil', medium: '🟡 Médio', hard: '🔴 Difícil' }[diff];
 
         await sock.sendMessage(sender, {
           text: `⚔️ *Duelo contra Sentinel — ${diffLabel}*\n\n🔗 ${link}\n\n⏳ Link válido por 20 min`,
         });
 
-        return sock.sendMessage(from, {
+        await sock.sendMessage(from, {
           text: `⚔️ @${p1Num} vs 🤖 Sentinel (${diffLabel})`,
           mentions: [sender],
         });
+
+        // Inicia polling para XP (sender = p1, bot = p2)
+        pollResult(sock, from, data.roomId, sender, 'sentinel@s.whatsapp.net');
+        return;
       }
 
-      // ── VS PLAYER ─────────────────────────────────────────────────────────
+      // ── VS PLAYER ────────────────────────────────────────────────────────
       const mentioned =
         message.message?.extendedTextMessage?.contextInfo?.mentionedJid || [];
 
@@ -64,7 +123,6 @@ module.exports = {
         return sock.sendMessage(from, { text: helpText() });
 
       const p2Jid = mentioned[0];
-
       if (p2Jid === sender)
         return sock.sendMessage(from, { text: '😐 Você não pode duelar consigo mesmo.' });
 
@@ -83,7 +141,6 @@ module.exports = {
         return sock.sendMessage(from, { text: '❌ Servidor de duelos indisponível. Tente novamente.' });
       }
 
-      // Envia links individualmente no PV
       await Promise.allSettled([
         sock.sendMessage(sender, {
           text: `⚔️ Duelo contra @${p2Num}\n\n🔗 ${genUrl(data.roomId, 'p1')}\n\n⏳ 20 min`,
@@ -95,10 +152,13 @@ module.exports = {
         }),
       ]);
 
-      return sock.sendMessage(from, {
+      await sock.sendMessage(from, {
         text: `⚔️ @${p1Num} desafiou @${p2Num}! Links enviados no PV.`,
         mentions: [sender, p2Jid],
       });
+
+      // Inicia polling para XP de ambos os jogadores
+      pollResult(sock, from, data.roomId, sender, p2Jid);
 
     } catch (err) {
       console.error('[DUEL ERROR]', err.message);
@@ -109,8 +169,7 @@ module.exports = {
 
 function helpText() {
   return [
-    '⚔️ *DUELO RPG*',
-    '',
+    '⚔️ *DUELO RPG*', '',
     '`!duel @usuário` — duelo PvP',
     '`!duel @Sentinel` — vs bot (médio)',
     '`!duel @Sentinel easy|medium|hard` — escolher dificuldade',

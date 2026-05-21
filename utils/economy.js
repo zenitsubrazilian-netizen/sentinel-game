@@ -1,10 +1,5 @@
 'use strict';
 
-// ============================================================
-// ECONOMY.JS — Sistema de XP, Level, Moedas e Economia v2.2.0
-// FIXES: dirty flag, operações atômicas, sem saveDB em cascata
-// ============================================================
-
 const fs   = require('fs');
 const path = require('path');
 
@@ -52,12 +47,8 @@ function getDailyBonus(streak) {
   return 1.0;
 }
 
-// ─────────────────────────────────────────────────────────────
-// DATABASE — dirty flag evita saves desnecessários
-// ─────────────────────────────────────────────────────────────
-
-let _cache = null;
-let _dirty = false;
+let _cache  = null;
+let _dirty  = false;
 let _saving = false;
 
 function loadDB() {
@@ -70,8 +61,7 @@ function loadDB() {
       _cache = {};
       return _cache;
     }
-    const raw = fs.readFileSync(DB_FILE, 'utf-8');
-    _cache = JSON.parse(raw);
+    _cache = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
     return _cache;
   } catch (err) {
     console.error('[ECONOMY] Erro ao carregar DB:', err.message);
@@ -96,48 +86,22 @@ function saveDB() {
   }
 }
 
-// Salva a cada 60s apenas se houver mudanças
 setInterval(saveDB, 60_000);
 process.on('SIGINT',  saveDB);
 process.on('SIGTERM', saveDB);
 
-// ─────────────────────────────────────────────────────────────
-// GERENCIAMENTO DE USUÁRIO
-// ─────────────────────────────────────────────────────────────
-
 function createUser(userId) {
   return {
-    xp:         0,
-    level:      1,
-    coins:      0,
-    streak:     0,
-    lastDaily:  null,
-    lastWeekly: null,
-    lastXP:     0,
-    lastActive: Date.now(),
-    messages:   0,
+    xp: 0, level: 1, coins: 0, streak: 0,
+    lastDaily: null, lastWeekly: null, lastXP: 0, lastActive: Date.now(), messages: 0,
     inventory: {
-      frames:   ['default'],
-      fonts:    ['default'],
-      relics:   [],
-      auras:    [],
-      boxes:    [],
-      equipped: {
-        frame: 'default',
-        font:  'default',
-        aura:  null,
-        relic: null,
-      },
+      frames: ['default'], fonts: ['default'], relics: [], auras: [], boxes: [],
+      equipped: { frame: 'default', font: 'default', aura: null, relic: null },
     },
     achievements: [],
     stats: {
-      totalXP:        0,
-      totalMessages:  0,
-      totalCoins:     0,
-      minigamesWon:   0,
-      eventsWon:      0,
-      dailyClaimed:   0,
-      weeklyClaimed:  0,
+      totalXP: 0, totalMessages: 0, totalCoins: 0,
+      minigamesWon: 0, eventsWon: 0, dailyClaimed: 0, weeklyClaimed: 0,
     },
   };
 }
@@ -145,11 +109,7 @@ function createUser(userId) {
 function getUser(userId) {
   if (!userId) throw new Error('[ECONOMY] getUser: userId inválido');
   const db = loadDB();
-  if (!db[userId]) {
-    db[userId] = createUser(userId);
-    _dirty = true;
-  }
-  // Garante que campos críticos existam em usuários antigos
+  if (!db[userId]) { db[userId] = createUser(userId); _dirty = true; }
   const u = db[userId];
   if (!u.stats)     { u.stats     = createUser(userId).stats;     _dirty = true; }
   if (!u.inventory) { u.inventory = createUser(userId).inventory; _dirty = true; }
@@ -166,10 +126,6 @@ function updateUser(userId, updates) {
   return user;
 }
 
-// ─────────────────────────────────────────────────────────────
-// SISTEMA DE XP
-// ─────────────────────────────────────────────────────────────
-
 function canGainXP(user) {
   return (Date.now() - (user.lastXP || 0)) >= CONFIG.xpCooldown;
 }
@@ -183,12 +139,10 @@ function addXP(userId, amount, source = 'message') {
     const user    = getUser(userId);
     const bonus   = getStreakBonus(user.streak || 0);
     const finalXP = Math.max(0, Math.floor(amount * bonus));
-
     user.xp               = (user.xp || 0) + finalXP;
     user.stats.totalXP    = (user.stats.totalXP || 0) + finalXP;
     user.lastXP           = Date.now();
     user.lastActive       = Date.now();
-
     const leveledUp = checkLevelUp(user);
     updateUser(userId, user);
     console.log(`[ECONOMY] +${finalXP} XP → ${userId.split('@')[0]} (${source})`);
@@ -199,10 +153,27 @@ function addXP(userId, amount, source = 'message') {
   }
 }
 
+// ─── NOVO: remove XP (mínimo 0, não vai negativo) ────────────────────────────
+function removeXP(userId, amount) {
+  if (!userId || typeof amount !== 'number' || amount <= 0) {
+    console.warn('[ECONOMY] removeXP: parâmetros inválidos');
+    return;
+  }
+  try {
+    const user  = getUser(userId);
+    const antes = user.xp || 0;
+    user.xp     = Math.max(0, antes - amount);
+    updateUser(userId, user);
+    console.log(`[ECONOMY] -${amount} XP → ${userId.split('@')[0]} (${antes} → ${user.xp})`);
+  } catch (err) {
+    console.error('[ECONOMY] removeXP error:', err.message);
+  }
+}
+
 function checkLevelUp(user) {
   let lastResult = null;
   let iterations = 0;
-  while (iterations++ < 100) { // Evita loop infinito
+  while (iterations++ < 100) {
     const xpNeeded = xpForLevel(user.level);
     if ((user.xp || 0) < xpNeeded) break;
     user.xp    -= xpNeeded;
@@ -216,13 +187,9 @@ function checkLevelUp(user) {
   return lastResult;
 }
 
-// ─────────────────────────────────────────────────────────────
-// SISTEMA DE MOEDAS — operações atômicas
-// ─────────────────────────────────────────────────────────────
-
 function addCoins(userId, amount, source = 'system') {
   if (!userId || typeof amount !== 'number' || amount < 0) {
-    console.warn(`[ECONOMY] addCoins: parâmetros inválidos (userId=${userId}, amount=${amount})`);
+    console.warn(`[ECONOMY] addCoins: parâmetros inválidos`);
     return null;
   }
   try {
@@ -230,7 +197,6 @@ function addCoins(userId, amount, source = 'system') {
     user.coins            = (user.coins || 0) + Math.floor(amount);
     user.stats.totalCoins = (user.stats.totalCoins || 0) + Math.floor(amount);
     updateUser(userId, user);
-    console.log(`[ECONOMY] +${Math.floor(amount)} moedas → ${userId.split('@')[0]} (${source})`);
     return user.coins;
   } catch (err) {
     console.error('[ECONOMY] addCoins error:', err.message);
@@ -238,23 +204,15 @@ function addCoins(userId, amount, source = 'system') {
   }
 }
 
-/**
- * Remove moedas de forma atômica.
- * Retorna { ok: true } ou { ok: false, reason: string }
- */
 function removeCoins(userId, amount) {
-  if (!userId || typeof amount !== 'number' || amount <= 0) {
+  if (!userId || typeof amount !== 'number' || amount <= 0)
     return { ok: false, reason: 'parâmetros inválidos' };
-  }
   try {
     const user = getUser(userId);
     const bal  = user.coins || 0;
-    if (bal < amount) {
-      return { ok: false, reason: 'saldo insuficiente', balance: bal };
-    }
+    if (bal < amount) return { ok: false, reason: 'saldo insuficiente', balance: bal };
     user.coins = bal - Math.floor(amount);
     updateUser(userId, user);
-    console.log(`[ECONOMY] -${Math.floor(amount)} moedas → ${userId.split('@')[0]}`);
     return { ok: true, balance: user.coins };
   } catch (err) {
     console.error('[ECONOMY] removeCoins error:', err.message);
@@ -263,30 +221,17 @@ function removeCoins(userId, amount) {
 }
 
 function getCoins(userId) {
-  try {
-    return getUser(userId).coins || 0;
-  } catch {
-    return 0;
-  }
+  try { return getUser(userId).coins || 0; } catch { return 0; }
 }
 
-/**
- * Transferência atômica entre dois usuários.
- * Retorna { ok: true } ou { ok: false, reason }
- */
 function transferCoins(fromId, toId, amount) {
-  if (!fromId || !toId || fromId === toId || amount <= 0) {
+  if (!fromId || !toId || fromId === toId || amount <= 0)
     return { ok: false, reason: 'parâmetros inválidos' };
-  }
   const result = removeCoins(fromId, amount);
   if (!result.ok) return result;
   addCoins(toId, amount, 'transfer');
   return { ok: true };
 }
-
-// ─────────────────────────────────────────────────────────────
-// SISTEMA DE STREAK
-// ─────────────────────────────────────────────────────────────
 
 function updateStreak(userId) {
   try {
@@ -295,17 +240,10 @@ function updateStreak(userId) {
     const lastActive = user.lastActive || 0;
     const dayMs      = 24 * 60 * 60 * 1000;
     const diff       = now - lastActive;
-
     if (diff < dayMs * 2) {
-      if (diff >= dayMs) {
-        user.streak = (user.streak || 0) + 1;
-        console.log(`[ECONOMY] Streak ${userId.split('@')[0]}: ${user.streak} dias`);
-      }
+      if (diff >= dayMs) user.streak = (user.streak || 0) + 1;
     } else {
-      if (user.streak > 0) {
-        console.log(`[ECONOMY] Streak ${userId.split('@')[0]} resetado (era ${user.streak})`);
-        user.streak = 0;
-      }
+      user.streak = 0;
     }
     user.lastActive = now;
     updateUser(userId, user);
@@ -315,10 +253,6 @@ function updateStreak(userId) {
     return 0;
   }
 }
-
-// ─────────────────────────────────────────────────────────────
-// SISTEMA DE DAILY
-// ─────────────────────────────────────────────────────────────
 
 function canClaimDaily(user) {
   if (!user.lastDaily) return true;
@@ -330,37 +264,27 @@ function claimDaily(userId) {
     const user = getUser(userId);
     if (!canClaimDaily(user)) {
       const remaining = (24 * 60 * 60 * 1000) - (Date.now() - user.lastDaily);
-      const hours     = Math.floor(remaining / (60 * 60 * 1000));
-      const minutes   = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
-      return { error: 'cooldown', hours, minutes };
+      return { error: 'cooldown', hours: Math.floor(remaining / 3600000), minutes: Math.floor((remaining % 3600000) / 60000) };
     }
-
     updateStreak(userId);
     const freshUser  = getUser(userId);
     const bonus      = getDailyBonus(freshUser.streak || 0);
     const finalCoins = Math.floor(CONFIG.dailyReward.coins * bonus);
     const finalXP    = Math.floor(CONFIG.dailyReward.xp    * bonus);
-
-    freshUser.coins               = (freshUser.coins || 0) + finalCoins;
-    freshUser.xp                  = (freshUser.xp    || 0) + finalXP;
-    freshUser.stats.totalCoins    = (freshUser.stats.totalCoins || 0) + finalCoins;
-    freshUser.stats.totalXP       = (freshUser.stats.totalXP    || 0) + finalXP;
-    freshUser.stats.dailyClaimed  = (freshUser.stats.dailyClaimed || 0) + 1;
-    freshUser.lastDaily            = Date.now();
-
+    freshUser.coins              = (freshUser.coins || 0) + finalCoins;
+    freshUser.xp                 = (freshUser.xp    || 0) + finalXP;
+    freshUser.stats.totalCoins   = (freshUser.stats.totalCoins || 0) + finalCoins;
+    freshUser.stats.totalXP      = (freshUser.stats.totalXP    || 0) + finalXP;
+    freshUser.stats.dailyClaimed = (freshUser.stats.dailyClaimed || 0) + 1;
+    freshUser.lastDaily           = Date.now();
     const leveledUp = checkLevelUp(freshUser);
     updateUser(userId, freshUser);
-    console.log(`[ECONOMY] Daily: ${userId.split('@')[0]} +${finalCoins} Z¢ +${finalXP} XP`);
     return { ok: true, coins: finalCoins, xp: finalXP, streak: freshUser.streak, bonus, leveledUp };
   } catch (err) {
     console.error('[ECONOMY] claimDaily error:', err.message);
     return { error: 'internal', message: err.message };
   }
 }
-
-// ─────────────────────────────────────────────────────────────
-// SISTEMA DE WEEKLY
-// ─────────────────────────────────────────────────────────────
 
 function canClaimWeekly(user) {
   if (!user.lastWeekly) return true;
@@ -372,27 +296,21 @@ function claimWeekly(userId) {
     const user = getUser(userId);
     if (!canClaimWeekly(user)) {
       const remaining = (7 * 24 * 60 * 60 * 1000) - (Date.now() - user.lastWeekly);
-      const days  = Math.floor(remaining / (24 * 60 * 60 * 1000));
-      const hours = Math.floor((remaining % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
-      return { error: 'cooldown', days, hours };
+      return { error: 'cooldown', days: Math.floor(remaining / 86400000), hours: Math.floor((remaining % 86400000) / 3600000) };
     }
-
     updateStreak(userId);
     const freshUser  = getUser(userId);
     const bonus      = getDailyBonus(freshUser.streak || 0);
     const finalCoins = Math.floor(CONFIG.weeklyReward.coins * bonus);
     const finalXP    = Math.floor(CONFIG.weeklyReward.xp    * bonus);
-
     freshUser.coins               = (freshUser.coins || 0) + finalCoins;
     freshUser.xp                  = (freshUser.xp    || 0) + finalXP;
     freshUser.stats.totalCoins    = (freshUser.stats.totalCoins || 0) + finalCoins;
     freshUser.stats.totalXP       = (freshUser.stats.totalXP    || 0) + finalXP;
     freshUser.stats.weeklyClaimed = (freshUser.stats.weeklyClaimed || 0) + 1;
     freshUser.lastWeekly           = Date.now();
-
     const leveledUp = checkLevelUp(freshUser);
     updateUser(userId, freshUser);
-    console.log(`[ECONOMY] Weekly: ${userId.split('@')[0]} +${finalCoins} Z¢ +${finalXP} XP`);
     return { ok: true, coins: finalCoins, xp: finalXP, streak: freshUser.streak, bonus, leveledUp };
   } catch (err) {
     console.error('[ECONOMY] claimWeekly error:', err.message);
@@ -400,21 +318,11 @@ function claimWeekly(userId) {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-// RANKING
-// ─────────────────────────────────────────────────────────────
-
 function getTopUsers(limit = 10) {
   try {
     const db = loadDB();
     return Object.entries(db)
-      .map(([id, data]) => ({
-        id,
-        level:   data.level   || 1,
-        xp:      data.xp      || 0,
-        coins:   data.coins   || 0,
-        totalXP: data.stats?.totalXP ?? 0,
-      }))
+      .map(([id, data]) => ({ id, level: data.level || 1, xp: data.xp || 0, coins: data.coins || 0, totalXP: data.stats?.totalXP ?? 0 }))
       .sort((a, b) => b.level !== a.level ? b.level - a.level : b.totalXP - a.totalXP)
       .slice(0, limit);
   } catch (err) {
@@ -423,29 +331,10 @@ function getTopUsers(limit = 10) {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-// EXPORTS
-// ─────────────────────────────────────────────────────────────
-
 module.exports = {
-  CONFIG,
-  xpForLevel,
-  getRank,
-  getStreakBonus,
-  getDailyBonus,
-  getUser,
-  updateUser,
-  canGainXP,
-  addXP,
-  addCoins,
-  removeCoins,
-  getCoins,
-  transferCoins,
-  updateStreak,
-  canClaimDaily,
-  claimDaily,
-  canClaimWeekly,
-  claimWeekly,
-  getTopUsers,
-  saveDB,
+  CONFIG, xpForLevel, getRank, getStreakBonus, getDailyBonus,
+  getUser, updateUser, canGainXP, addXP, removeXP,
+  addCoins, removeCoins, getCoins, transferCoins,
+  updateStreak, canClaimDaily, claimDaily, canClaimWeekly, claimWeekly,
+  getTopUsers, saveDB,
 };
