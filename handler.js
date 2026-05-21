@@ -21,6 +21,9 @@ const { handleDuoReply }    = require('./events/duoHandler.js');
 const { handleXPGain }      = require('./events/xpHandler.js');
 const { handleQuizReply }   = require('./commands/quiz.js');
 
+// ── [AFK] importa utilitários de AFK
+const { isAfk, getAfk, removeAfk, formatAusente } = require('./utils/afk.js');
+
 // ── GAME HANDLER — importado aqui para ser chamado ANTES da IA
 const { handleGameReply }   = require('./events/gameHandler.js');
 
@@ -104,6 +107,29 @@ setInterval(() => {
     if (now > value.expiresAt) pendingUnban.delete(key);
   }
 }, 120_000);
+
+// ─────────────────────────────────────────────────────────────
+// [AFK] HELPER — coleta JIDs mencionados na mensagem
+// Cobre: menções explícitas (@número) e reply (mensagem citada)
+// ─────────────────────────────────────────────────────────────
+
+function getMentionedJids(msgContent) {
+  const mentioned = new Set();
+
+  // Menções explícitas (@número)
+  const explicitMentions =
+    msgContent?.extendedTextMessage?.contextInfo?.mentionedJid ?? [];
+  for (const jid of explicitMentions) mentioned.add(jid);
+
+  // Reply — participante da mensagem citada
+  const quotedParticipant =
+    msgContent?.extendedTextMessage?.contextInfo?.participant ??
+    msgContent?.extendedTextMessage?.contextInfo?.remoteJid ??
+    null;
+  if (quotedParticipant) mentioned.add(quotedParticipant);
+
+  return [...mentioned];
+}
 
 // ─────────────────────────────────────────────────────────────
 // HANDLER PRINCIPAL
@@ -207,6 +233,55 @@ async function handleMessage(sock, message) {
   const senderNum  = sender ? sender.replace('@s.whatsapp.net', '').replace('@lid', '') : '';
   const senderName = message.pushName || senderNum;
   const body       = text.trim();
+
+  // ── [AFK] AUTO-REMOVE: usuário enviou mensagem → sai do AFK automaticamente
+  // Exceção: !afk (o próprio comando vai redefinir o AFK logo adiante)
+  if (sender && isAfk(sender)) {
+    const isSettingAfk = body.toLowerCase().startsWith(`${config.prefix}afk`);
+
+    if (!isSettingAfk) {
+      const afkData = getAfk(sender);
+      const ausente = formatAusente(afkData.since);
+      removeAfk(sender);
+      console.log(`[AFK] ${senderNum} voltou (ausente por ${ausente})`);
+
+      try {
+        await wsock.sendMessage(from, {
+          text:     `Bem-vindo de volta, @${senderNum}! 👋\nSeu AFK foi removido automaticamente. _(ausente por ${ausente})_`,
+          mentions: [sender],
+        });
+      } catch (err) {
+        console.error('[AFK] Erro ao notificar retorno:', err.message);
+      }
+    }
+  }
+
+  // ── [AFK] VERIFICAR MENÇÕES: alguém mencionou um usuário AFK?
+  if (sender) {
+    try {
+      const mentionedJids = getMentionedJids(msgContent);
+
+      for (const mentionedJid of mentionedJids) {
+        // Ignora auto-menção
+        if (mentionedJid === sender) continue;
+
+        if (isAfk(mentionedJid)) {
+          const afkData    = getAfk(mentionedJid);
+          const ausente    = formatAusente(afkData.since);
+          const afkName    = afkData.name || mentionedJid.replace('@s.whatsapp.net', '').replace('@lid', '');
+          const motivoLine = afkData.reason ? `\n*Motivo:* ${afkData.reason}` : '';
+
+          await wsock.sendMessage(from, {
+            text: `⚠️ *${afkName}* está AFK no momento.${motivoLine}\n_(ausente há ${ausente})_`,
+          });
+
+          console.log(`[AFK] ${senderNum} mencionou ${afkName} que está AFK`);
+        }
+      }
+    } catch (err) {
+      console.error('[AFK] Erro ao checar menções:', err.message);
+    }
+  }
 
   // ── CAPTURA PASSIVA
   if (isGroup && sender) {

@@ -151,6 +151,8 @@ DIVERSÃO:
 UTILIDADES:
 !hidetag <mensagem> — marca todos sem mostrar @
 !regras | !ping | !menu
+!afk [motivo] — ativa modo AFK; motivo é opcional; quem mencionar o usuário AFK recebe aviso automático; qualquer mensagem enviada remove o AFK automaticamente
+!unafk — desativa o modo AFK manualmente (sem precisar enviar outra mensagem)
 
 ADMIN (só dono):
 !trainai add <ensinamento> <nome>

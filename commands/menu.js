@@ -90,7 +90,7 @@ const MENU = `
 🎰 !roleta                                        
 🎯 !forca                                         
 ⚔️ !duel @usuário                                  
-⚔️ !duel @Sentinel <easy|medium|hard> (bot via site)           
+⚔️ !duel @Sentinel <easy|medium|hard>             
 👥 !duo                                           
 🧠 !quiz                                          
 ╰────────────────╯                                                                                  
@@ -99,6 +99,8 @@ const MENU = `
 📜 !regras    
 📶 !ping                                          
 📋 !menu                                          
+🔕 !afk [motivo]  — ativa modo ausente            
+🔔 !unafk         — desativa modo ausente         
 ╰────────────────╯    
 ╭─👑 𝘼𝘿𝙈𝙄𝙉 (só dono) ─╮                           
 🧠 !trainai add <ensinamento> <nome>    

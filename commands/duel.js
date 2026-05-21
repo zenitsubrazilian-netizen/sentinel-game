@@ -11,7 +11,7 @@ const genUrl = (roomId, player) => `${SERVER}/duel?room=${roomId}&player=${playe
 
 // ─── Polling: verifica resultado e concede/remove XP ─────────────────────────
 function pollResult(sock, from, roomId, p1Jid, p2Jid) {
-  const MAX   = 25;   // 25 × 60s = 25 min
+  const MAX   = 25;
   let   tries = 0;
 
   const timer = setInterval(async () => {
@@ -19,13 +19,21 @@ function pollResult(sock, from, roomId, p1Jid, p2Jid) {
     if (tries > MAX) { clearInterval(timer); return; }
 
     try {
-      const { data } = await axios.get(`${SERVER}/room/${roomId}/result`, { timeout: 8000 });
+      const { data } = await axios.get(
+        `${SERVER}/duel/room/${roomId}/result`,
+        { timeout: 8000 }
+      );
       if (!data.ended) return;
 
       clearInterval(timer);
 
       const mentions = [p1Jid, p2Jid].filter(j => j && j !== 'sentinel@s.whatsapp.net');
-      const msgLines = [`━━━━━━━━━━━━━━━━━━`, `⚔️ *RESULTADO DO DUELO WEB*`, `━━━━━━━━━━━━━━━━━━`, ``];
+      const msgLines = [
+        `━━━━━━━━━━━━━━━━━━`,
+        `⚔️ *RESULTADO DO DUELO WEB*`,
+        `━━━━━━━━━━━━━━━━━━`,
+        ``,
+      ];
 
       if (data.winner === 'draw') {
         if (!data.p1IsBot) addXP(data.p1Jid, 20, 'duel_draw_web');
@@ -97,17 +105,15 @@ module.exports = {
 
       // ── VS BOT ───────────────────────────────────────────────────────────
       if (vsBot) {
-        const diff = args.find(a => DIFFS.includes(a.toLowerCase()))?.toLowerCase() || 'medium';
+        const diff      = args.find(a => DIFFS.includes(a.toLowerCase()))?.toLowerCase() || 'medium';
+        const diffLabel = { easy: '🟢 Fácil', medium: '🟡 Médio', hard: '🔴 Difícil', ai: '🤖 IA' }[diff] || diff;
 
         let data;
         try {
           ({ data } = await axios.post(
-            `${SERVER}/room`,
+            `${SERVER}/duel/room`,
             { p1Jid: sender, isVsBot: true, difficulty: diff, p1Bonus },
-            {
-              timeout: 15000,
-              headers: { 'Content-Type': 'application/json' },
-            }
+            { timeout: 15000, headers: { 'Content-Type': 'application/json' } }
           ));
         } catch (e) {
           console.error('[DUEL] Falha ao criar sala vs bot:', e.message);
@@ -115,9 +121,8 @@ module.exports = {
         }
 
         const link      = genUrl(data.roomId, 'p1');
-        const diffLabel = { easy: '🟢 Fácil', medium: '🟡 Médio', hard: '🔴 Difícil', ai: '🤖 IA' }[diff] || diff;
         const relicInfo = Object.keys(p1Bonus).length
-          ? `\n🔮 Relíquia ativa: ${Object.entries(p1Bonus).map(([k,v]) => `${k}: +${v}`).join(' | ')}`
+          ? `\n🔮 Relíquia: ${Object.entries(p1Bonus).map(([k,v]) => `${k}: +${v}`).join(' | ')}`
           : '';
 
         await sock.sendMessage(sender, {
@@ -150,12 +155,9 @@ module.exports = {
       let data;
       try {
         ({ data } = await axios.post(
-          `${SERVER}/room`,
+          `${SERVER}/duel/room`,
           { p1Jid: sender, p2Jid, isVsBot: false, p1Bonus, p2Bonus },
-          {
-            timeout: 15000,
-            headers: { 'Content-Type': 'application/json' },
-          }
+          { timeout: 15000, headers: { 'Content-Type': 'application/json' } }
         ));
       } catch (e) {
         console.error('[DUEL] Falha ao criar sala pvp:', e.message);
@@ -194,6 +196,6 @@ function helpText() {
     '`!duel @Sentinel` — vs bot (médio)',
     '`!duel @Sentinel easy|medium|hard|ai` — escolher dificuldade',
     '',
-    '🔮 Equipe uma relíquia com `!equipar relic <id>` para bônus de batalha!',
+    '🔮 Equipe uma relíquia com `!equipar relic <id>` para bônus!',
   ].join('\n');
 }
