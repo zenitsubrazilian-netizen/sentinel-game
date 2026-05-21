@@ -28,7 +28,7 @@ app.get('/room/:roomId/result', (req, res) => {
   if (room.phase !== 'ended') return res.json({ ended: false });
   return res.json({
     ended:    true,
-    winner:   room.winner,   // 'p1' | 'p2' | 'draw'
+    winner:   room.winner,
     p1Jid:    room.p1.jid,
     p2Jid:    room.p2.jid,
     p1IsBot:  room.p1.isBot,
@@ -39,62 +39,80 @@ app.get('/room/:roomId/result', (req, res) => {
 app.post('/room', (req, res) => {
   const { p1Jid, p2Jid, isVsBot, difficulty, p1Bonus, p2Bonus } = req.body;
   if (!p1Jid) return res.status(400).json({ error: 'p1Jid obrigatório' });
+
+  // FIX: log para diagnóstico de relíquias
+  console.log(`[ROOM] Criando sala | p1: ${p1Jid} | isVsBot: ${isVsBot} | diff: ${difficulty}`);
+  console.log(`[ROOM] p1Bonus:`, JSON.stringify(p1Bonus || {}));
+  console.log(`[ROOM] p2Bonus:`, JSON.stringify(p2Bonus || {}));
+
   const roomId = genId();
   const p1 = makePlayer(p1Jid, false, p1Bonus || {});
   const p2 = isVsBot
     ? makePlayer('sentinel', true,  {})
     : makePlayer(p2Jid || 'unknown', false, p2Bonus || {});
+
   rooms.set(roomId, {
     id: roomId, phase: 'fighting', round: 1,
     isVsBot: !!isVsBot, difficulty: difficulty || 'medium',
     log: [], p1, p2, createdAt: Date.now(),
   });
-  // Mantém sala por 25 min (5 extra após game para polling de XP)
+
+  // FIX: log confirmando stats aplicados
+  console.log(`[ROOM] p1 criado | HP:${p1.hp} dmgBonus:${p1.dmgBonus} regenPerRound:${p1.regenPerRound} dodgeBonus:${p1.dodgeBonus} damageReduction:${p1.damageReduction}`);
+
+  // Mantém sala por 25 min
   setTimeout(() => rooms.delete(roomId), 25 * 60_000);
   res.json({ roomId });
 });
 
-app.get(['/', '/game'], (req, res) => {
+// ─── Serve duel.html (rota principal) ────────────────────────────────────────
+app.get(['/', '/duel'], (req, res) => {
   const { room, player } = req.query;
   if (!room || !['p1', 'p2'].includes(player))
     return res.status(400).send('<h2 style="font-family:sans-serif;padding:20px;color:red">⚠️ Link inválido.</h2>');
-  res.sendFile(path.join(__dirname, 'game.html'));
+  res.sendFile(path.join(__dirname, 'duel.html'));
 });
 
-// ─── FACTORY DE JOGADOR — FIX: usa chaves corretas dos bônus de relíquia ─────
+// ─── Rota legada /game → redireciona para /duel ───────────────────────────────
+app.get('/game', (req, res) => {
+  const qs = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+  res.redirect(301, `/duel${qs}`);
+});
+
+// ─── FACTORY DE JOGADOR ───────────────────────────────────────────────────────
 function makePlayer(jid, isBot = false, bonus = {}) {
+  // FIX: garante que bonus é um objeto puro (evita undefined/null de body parsing)
+  const b = bonus && typeof bonus === 'object' ? bonus : {};
   return {
     jid,
     isBot,
-    hp:               120 + (bonus.maxHpBonus     || 0),
-    maxHp:            120 + (bonus.maxHpBonus     || 0),
-    mana:              60 + (bonus.maxManaBonus   || 0),
-    maxMana:           60 + (bonus.maxManaBonus   || 0),
-    energy:            50 + (bonus.maxEnergyBonus || 0),
-    maxEnergy:         50 + (bonus.maxEnergyBonus || 0),
-    potions:            2 + (bonus.extraPotions   || 0),
+    hp:               120 + (b.maxHpBonus     || 0),
+    maxHp:            120 + (b.maxHpBonus     || 0),
+    mana:              60 + (b.maxManaBonus   || 0),
+    maxMana:           60 + (b.maxManaBonus   || 0),
+    energy:            50 + (b.maxEnergyBonus || 0),
+    maxEnergy:         50 + (b.maxEnergyBonus || 0),
+    potions:            2 + (b.extraPotions   || 0),
     effects:           [],
-    ultimate:          bonus.startUltimate        || 0,
-    action:          null,
-    defending:       false,
+    ultimate:          b.startUltimate        || 0,
+    action:           null,
+    defending:        false,
     spellCooldowns:    {},
-    // Bônus de relíquia armazenados e aplicados no combate
-    manaCostReduction:  bonus.manaCostReduction  || 0,
-    dmgBonus:           bonus.dmgBonus           || 0,
-    dodgeBonus:         bonus.dodgeBonus         || 0,
-    damageReduction:    bonus.damageReduction    || 0,
-    regenPerRound:      bonus.regenPerRound      || 0,
-    spellPowerBonus:    bonus.spellPowerBonus    || 0,
-    ultimatePowerBonus: bonus.ultimatePowerBonus || 0,
+    manaCostReduction:  Number(b.manaCostReduction)  || 0,
+    dmgBonus:           Number(b.dmgBonus)           || 0,
+    dodgeBonus:         Number(b.dodgeBonus)         || 0,
+    damageReduction:    Number(b.damageReduction)    || 0,
+    regenPerRound:      Number(b.regenPerRound)      || 0,
+    spellPowerBonus:    Number(b.spellPowerBonus)    || 0,
+    ultimatePowerBonus: Number(b.ultimatePowerBonus) || 0,
   };
 }
 
 // ─── FEITIÇOS ─────────────────────────────────────────────────────────────────
-// FIX: gelo cd=4 (2 ativo + 2 após) | raio cd=2 (1 ativo + 1 após)
 const SPELLS = {
   bola_de_fogo:  { cost: 25, cd: 2 },
-  raio:          { cost: 30, cd: 2 },   // FIX: era 3
-  gelo:          { cost: 20, cd: 4 },   // FIX: era 2
+  raio:          { cost: 30, cd: 2 },
+  gelo:          { cost: 20, cd: 4 },
   veneno:        { cost: 15, cd: 3 },
   cura:          { cost: 20, cd: 2 },
   escudo_magico: { cost: 18, cd: 2 },
@@ -182,7 +200,6 @@ function processRound(room) {
   p1.defending = false; p2.defending = false;
   let dodge1 = false, dodge2 = false;
 
-  // Bloqueia ação se congelado/atordoado
   const isStunned = p => hasEffect(p, '🧊 Congelado') || hasEffect(p, '⚡ Stun');
 
   const resolvePassive = (actor, action, aName) => {
@@ -214,9 +231,7 @@ function processRound(room) {
   resolvePassive(p1, act1, n1);
   resolvePassive(p2, act2, n2);
 
-  // FIX: aplica dmgBonus e ultimatePowerBonus da relíquia
   const applyDamage = (target, rawDmg, attackerName, targetName, logMsg) => {
-    if (isStunned(target)) {} // alvo congelado/stunado ainda sofre dano
     let dmg = rawDmg;
     const shieldEff = target.effects.find(e => e.type === '🛡️ Escudo Mágico' && e.rounds > 0);
     if (shieldEff) {
@@ -224,9 +239,10 @@ function processRound(room) {
     } else if (target.defending) {
       dmg = Math.ceil(dmg * 0.5);
     } else if ((target.damageReduction || 0) > 0) {
-      // FIX: relíquia de redução de dano
-      dmg = Math.ceil(dmg * (1 - target.damageReduction));
-      log.push(`🌑 ${targetName} relíquia absorve parte do dano!`);
+      // FIX: garante aplicação correta do bônus de relíquia
+      const reduced = Math.ceil(dmg * (1 - target.damageReduction));
+      log.push(`🌑 ${targetName} relíquia absorve parte do dano! (${dmg} → ${reduced})`);
+      dmg = reduced;
     }
     const dodged = (target === p1 && dodge1) || (target === p2 && dodge2);
     if (dodged) { log.push(`💨 ${targetName} esquiva do ataque!`); return; }
@@ -236,10 +252,10 @@ function processRound(room) {
   };
 
   const resolveOffensive = (actor, target, action, aName, dName) => {
-    if (isStunned(actor)) return; // já logado em resolvePassive
+    if (isStunned(actor)) return;
     const furyBonus   = hasEffect(actor, '😤 Fúria')   ? 10 : 0;
     const weaknessPen = hasEffect(actor, '💫 Fraqueza') ?  8 : 0;
-    const dmgPlus     = actor.dmgBonus || 0;   // FIX: bônus da relíquia
+    const dmgPlus     = actor.dmgBonus || 0;
 
     if (action === 'ataque leve') {
       const base = rand(8, 15) + furyBonus - weaknessPen + dmgPlus;
@@ -274,7 +290,6 @@ function processRound(room) {
 
     } else if (action === 'ultimate') {
       if (actor.ultimate < 100) { log.push(`✨ ${aName} ultimate não carregado!`); return; }
-      // FIX: aplica ultimatePowerBonus da relíquia
       const base = rand(45, 65 + (actor.ultimatePowerBonus || 0));
       applyDamage(target, base, aName, dName, `✨✨ ${aName} ULTIMATE em ${dName}! -{DMG} HP`);
       actor.ultimate = 0;
@@ -292,7 +307,7 @@ function processRound(room) {
   p1.energy = clamp(p1.energy + rand(8, 12), 0, p1.maxEnergy);
   p2.energy = clamp(p2.energy + rand(8, 12), 0, p2.maxEnergy);
 
-  // FIX: regen por round da relíquia
+  // FIX: regen de HP por relíquia
   if ((p1.regenPerRound || 0) > 0 && p1.hp > 0) {
     p1.hp = clamp(p1.hp + p1.regenPerRound, 0, p1.maxHp);
     log.push(`💚 ${n1} regenera +${p1.regenPerRound} HP (relíquia) → ${p1.hp}/${p1.maxHp}`);
@@ -321,7 +336,6 @@ function processSpell(caster, target, spellId, aName, dName, log) {
   caster.mana -= cost;
   caster.spellCooldowns[spellId] = spell.cd;
 
-  // FIX: aplica spellPowerBonus da relíquia em todos os feitiços de dano
   const spellPower = caster.spellPowerBonus || 0;
 
   switch (spellId) {
@@ -336,14 +350,14 @@ function processSpell(caster, target, spellId, aName, dName, log) {
       const dmg = rand(25, 40) + spellPower;
       target.hp -= dmg;
       addEffect(target, '⚡ Stun', 1);
-      log.push(`⚡ ${aName} Raio em ${dName}! -${dmg} HP + Stun 1r (cd: 2 rounds)`);
+      log.push(`⚡ ${aName} Raio em ${dName}! -${dmg} HP + Stun 1r`);
       break;
     }
     case 'gelo': {
       const dmg = rand(15, 22) + spellPower;
       target.hp -= dmg;
       addEffect(target, '🧊 Congelado', 2);
-      log.push(`🧊 ${aName} Tempestade de Gelo em ${dName}! -${dmg} HP + Congelado 2r (cd: 4 rounds)`);
+      log.push(`🧊 ${aName} Tempestade de Gelo em ${dName}! -${dmg} HP + Congelado 2r`);
       break;
     }
     case 'veneno': {
@@ -398,11 +412,13 @@ function botAction(room, bot, enemy) {
     if (chance(20)) return 'defesa';
     return chance(70) ? 'ataque leve' : 'esquiva';
   }
-  if (diff === 'hard') {
+
+  // 'ai' usa lógica hard aprimorada com escolha de magia aleatória
+  if (diff === 'hard' || diff === 'ai') {
     if (bot.hp < 40 && bot.potions > 0) return 'usar item';
     if (bot.ultimate >= 100) return 'ultimate';
-    if (notSilent && chance(50)) {
-      const avail = ['raio','bola_de_fogo','veneno','correntes','fraqueza'].filter(canSpell);
+    if (notSilent && chance(diff === 'ai' ? 60 : 50)) {
+      const avail = ['raio','bola_de_fogo','veneno','correntes','fraqueza','gelo'].filter(canSpell);
       if (avail.length) return `magia: ${avail[Math.floor(Math.random() * avail.length)]}`;
     }
     if (notSilent && bot.hp < 60 && canSpell('cura'))          return 'magia: cura';
@@ -412,7 +428,8 @@ function botAction(room, bot, enemy) {
     if (chance(15)) return 'contra-ataque';
     return chance(25) ? 'defesa' : 'ataque leve';
   }
-  // medium
+
+  // medium (default)
   if (bot.hp < 35 && bot.potions > 0) return 'usar item';
   if (bot.ultimate >= 100) return 'ultimate';
   if (notSilent && bot.hp < 50 && canSpell('cura') && chance(60))         return 'magia: cura';
@@ -422,7 +439,7 @@ function botAction(room, bot, enemy) {
   return 'ataque leve';
 }
 
-// ─── SANITIZE — FIX: inclui todos os campos de bônus de relíquia ─────────────
+// ─── SANITIZE ─────────────────────────────────────────────────────────────────
 function sanitize(room) {
   const sp = p => ({
     hp:                 Math.max(0, p.hp),

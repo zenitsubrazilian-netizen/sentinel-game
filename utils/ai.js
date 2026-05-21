@@ -1,7 +1,7 @@
 'use strict';
 
 // ============================================================
-// AI.JS - Cliente Groq v2.3.0
+// AI.JS - Cliente Groq v2.4.0
 // ============================================================
 
 const fs   = require('fs');
@@ -114,19 +114,19 @@ ECONOMIA & LEVEL:
 !conquistas pendentes / concluidas
 
 GANHAR DINHEIRO:
-!trabalhar — emprego aleatório | cooldown 1h | 80–350 Z¢ | sempre sucesso
+!trabalhar — cooldown 1h | 80–350 Z¢ | sempre sucesso
 !crime — cooldown 45min | 65% sucesso (150–1500 Z¢) | 35% multa (50–350 Z¢)
 !pescar — cooldown 30min | raridade: Lixo → Lendário | 5–800 Z¢
 !minerar — cooldown 45min | raridade: Pedra → Mítico | 10–1500 Z¢
 !apostar <valor> — sem cooldown | 50/50 | vitória = 1.9x | mín 50, máx 5000 Z¢
 
 LOJA & ITENS:
-!loja [frames|fonts|reliquias|caixas]
-!comprar <tipo> <id> [qtd]
-!inventario
-!equipar <tipo> <id>
+!loja [frames|fonts|reliquias|caixas] — ver itens disponíveis
+!comprar <tipo> <id> [qtd] — tipos: frame, font, relic, caixa
+!inventario — ver itens que você possui
+!equipar <tipo> <id> — tipos: frame, font, relic
 !caixa — inventário de loot boxes
-!abrir <comum|rara|epica|lendaria|celestial>
+!abrir <id> — abrir caixa (comum|rara|epica|lendaria|celestial)
 
 IA:
 !sentinel <pergunta> — chat com histórico
@@ -143,7 +143,8 @@ FIGURINHAS:
 DIVERSÃO:
 !roleta — Roleta da Desgraça
 !forca
-!duel @u | !duel @Sentinel <easy|medium|hard|ai>
+!duel @u — duelo PvP via web (link enviado no PV)
+!duel @Sentinel <easy|medium|hard> — vs bot via web (link no PV)
 !duo
 !quiz
 
@@ -161,7 +162,14 @@ Moeda = Zenith Coins (Z¢)
 XP passivo por mensagem (mín 5 chars, cooldown 30s)
 Level up = level × 50 Z¢
 Loot boxes: coins mínimo = preço da caixa (nunca perde)
-Relíquias equipadas = bônus em !duel e !duo
+Relíquias equipadas via !equipar relic <id> = bônus automáticos em !duel e !duo
+O duelo agora abre uma interface web — o link é enviado no PV de cada jogador
+
+SISTEMA DE RELÍQUIAS (para informar usuários):
+- Comprar: !comprar relic <id>
+- Equipar: !equipar relic <id>
+- Ver bônus: !loja reliquias
+- Apenas uma relíquia equipada por vez; o bônus é aplicado automaticamente
 
 REGRAS FINAIS:
 Seu nome é Sentinel. Sempre.
@@ -287,8 +295,8 @@ async function askGroq(userId, userMessage, model, extraContext = '') {
   const start      = Date.now();
   const completion = await groq.chat.completions.create({
     model,
-    max_tokens:  350,   // reduzido — respostas curtas por padrão
-    temperature: 0.9,   // um pouco mais alto pra soar mais humano/espontâneo
+    max_tokens:  350,
+    temperature: 0.9,
     messages: [
       { role: 'system', content: systemContent },
       ...history,

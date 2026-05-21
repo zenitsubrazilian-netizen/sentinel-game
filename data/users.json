@@ -1,14 +1,14 @@
 {
   "115809867276438@lid": {
-    "xp": 2150,
+    "xp": 2561,
     "level": 15,
     "coins": 3999,
     "streak": 0,
     "lastDaily": 1779316799821,
     "lastWeekly": 1778936867368,
-    "lastXP": 1779331582173,
-    "lastActive": 1779331582173,
-    "messages": 1118,
+    "lastXP": 1779335188120,
+    "lastActive": 1779335188120,
+    "messages": 1119,
     "inventory": {
       "frames": [
         "default",
@@ -29,7 +29,7 @@
         "frame": "galaxy",
         "font": "glitch",
         "aura": null,
-        "relic": "cetro_das_almas"
+        "relic": "colar_vital"
       },
       "relics": [
         "botas_dos_ventos",
@@ -53,8 +53,8 @@
       "legend_speaker"
     ],
     "stats": {
-      "totalXP": 37615,
-      "totalMessages": 1118,
+      "totalXP": 38026,
+      "totalMessages": 1119,
       "totalCoins": 110487,
       "minigamesWon": 235,
       "eventsWon": 0,
@@ -417,15 +417,15 @@
     }
   },
   "224120151273544@lid": {
-    "xp": 2102,
+    "xp": 2016,
     "level": 10,
     "coins": 1824,
     "streak": 0,
     "lastDaily": 1779316786902,
     "lastWeekly": 1778946569317,
-    "lastXP": 1779331483506,
-    "lastActive": 1779331483506,
-    "messages": 271,
+    "lastXP": 1779334311743,
+    "lastActive": 1779334311743,
+    "messages": 273,
     "inventory": {
       "frames": [
         "default",
@@ -467,8 +467,8 @@
       "level_10"
     ],
     "stats": {
-      "totalXP": 15328,
-      "totalMessages": 271,
+      "totalXP": 15342,
+      "totalMessages": 273,
       "totalCoins": 180179,
       "minigamesWon": 37,
       "eventsWon": 0,
@@ -1698,7 +1698,7 @@
     }
   },
   "135858757865676@lid": {
-    "xp": 20,
+    "xp": 0,
     "level": 3,
     "coins": 198,
     "streak": 0,

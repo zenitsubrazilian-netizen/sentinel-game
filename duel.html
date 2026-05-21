@@ -29,8 +29,8 @@ body{background:var(--bg);color:var(--txt);font-family:system-ui,sans-serif;disp
 .btn{background:var(--card);border:1px solid var(--b);border-radius:10px;color:var(--txt);padding:10px 4px;font-size:11px;font-weight:600;cursor:pointer;text-align:center;transition:transform .1s;line-height:1.4;-webkit-tap-highlight-color:transparent}
 .btn:active{transform:scale(.94);background:#1e1e38}
 .btn.sp{border-color:var(--pur);color:#c4b5fd}.btn.ul{border-color:var(--gold);color:var(--gold)}
+.btn.wa{border-color:#25d366;color:#25d366;font-size:13px;padding:12px 4px}
 .btn.w2{grid-column:span 2}.btn.w3{grid-column:span 3}
-/* MELHORIA: botões desabilitados visualmente */
 .btn:disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
 .wait{text-align:center;padding:12px;color:var(--mut);font-size:13px;background:var(--card);border-radius:10px;border:1px dashed var(--b)}
 .hidden{display:none!important}
@@ -46,6 +46,7 @@ body{background:var(--bg);color:var(--txt);font-family:system-ui,sans-serif;disp
 .end{text-align:center;padding:30px 16px;margin-top:10px}
 .end-e{font-size:50px;margin-bottom:8px}.end-t{font-size:22px;font-weight:800;margin-bottom:10px}
 .end-s{font-size:13px;color:var(--mut);line-height:2}
+.end-actions{display:flex;flex-direction:column;gap:8px;padding:0 16px 16px}
 #reconn{position:fixed;top:0;left:0;right:0;background:#7c3aed;color:#fff;text-align:center;padding:8px;font-size:12px;font-weight:700;z-index:100;display:none}
 </style>
 </head>
@@ -113,6 +114,12 @@ body{background:var(--bg);color:var(--txt);font-family:system-ui,sans-serif;disp
     <div class="end-s" id="end-s"></div>
   </div>
   <div class="log" id="end-log" style="max-height:280px"></div>
+  <!-- Ações pós-duelo -->
+  <div class="end-actions">
+    <button class="btn wa w3" onclick="openWhatsApp()">
+      💬 Voltar ao WhatsApp
+    </button>
+  </div>
 </div>
 
 </div>
@@ -224,7 +231,6 @@ function render() {
   el('myefx').textContent    = (me.effects || []).map(e => e.type).join(' ') || '';
   el('myready').textContent  = me.action ? '✅ aguardando...' : '';
 
-  // MELHORIA: desabilita botões sem recursos suficientes (feedback visual)
   el('btn-pesado').disabled = (me.energy || 0) < 15;
   el('btn-contra').disabled = (me.energy || 0) < 20;
   el('btn-break').disabled  = (me.energy || 0) < 25;
@@ -276,7 +282,7 @@ window.act = action => {
 
 window.showSp = () => {
   const me = state?.[PLAYER];
-  if (!me || state?.phase !== 'fighting' || sent) return;  // CORREÇÃO: bloqueia se já agiu
+  if (!me || state?.phase !== 'fighting' || sent) return;
 
   const grid = el('spgrid');
   grid.innerHTML = '';
@@ -307,13 +313,24 @@ window.showSp = () => {
   el('spov').classList.remove('hidden');
 };
 
-// CORREÇÃO: lógica de hideSp tornada explícita (não depende de acidente com `!e`)
 window.hideSp = () => el('spov').classList.add('hidden');
 
-// Fecha overlay clicando fora do painel
 el('spov').addEventListener('click', e => {
   if (e.target === el('spov')) hideSp();
 });
+
+// ─── WhatsApp redirect ────────────────────────────────────────
+window.openWhatsApp = function() {
+  const ua = navigator.userAgent.toLowerCase();
+  const isMobile = /android|iphone|ipad|ipod/.test(ua);
+  if (isMobile) {
+    // Tenta abrir o app; se não instalado, nada acontece visualmente
+    window.location.href = 'whatsapp://';
+  } else {
+    // Desktop: abre WhatsApp Web numa nova aba
+    window.open('https://web.whatsapp.com', '_blank');
+  }
+};
 </script>
 </body>
 </html>

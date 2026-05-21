@@ -1,20 +1,17 @@
 'use strict';
+
 const axios = require('axios');
+const { getBattleBonus } = require('../utils/shop.js');
+const { addXP, removeXP } = require('../utils/economy.js');
 
 const SERVER = 'https://sentinel-game-3.onrender.com';
+const DIFFS  = ['easy', 'medium', 'hard', 'ai'];
 
-let getBattleBonus = () => ({});
-let addXP          = () => {};
-let removeXP       = () => {};
-try { getBattleBonus = require('../utils/shop.js').getBattleBonus; }    catch (_) {}
-try { ({ addXP, removeXP } = require('../utils/economy.js')); }         catch (_) {}
-
-const DIFFS  = ['easy', 'medium', 'hard'];
-const genUrl = (roomId, player) => `${SERVER}/game?room=${roomId}&player=${player}`;
+const genUrl = (roomId, player) => `${SERVER}/duel?room=${roomId}&player=${player}`;
 
 // ─── Polling: verifica resultado e concede/remove XP ─────────────────────────
 function pollResult(sock, from, roomId, p1Jid, p2Jid) {
-  const MAX   = 25;   // 25 tentativas × 60s = 25 min
+  const MAX   = 25;   // 25 × 60s = 25 min
   let   tries = 0;
 
   const timer = setInterval(async () => {
@@ -27,14 +24,13 @@ function pollResult(sock, from, roomId, p1Jid, p2Jid) {
 
       clearInterval(timer);
 
-      let msgLines = [`━━━━━━━━━━━━━━━━━━`, `⚔️ *RESULTADO DO DUELO WEB*`, `━━━━━━━━━━━━━━━━━━`, ``];
       const mentions = [p1Jid, p2Jid].filter(j => j && j !== 'sentinel@s.whatsapp.net');
+      const msgLines = [`━━━━━━━━━━━━━━━━━━`, `⚔️ *RESULTADO DO DUELO WEB*`, `━━━━━━━━━━━━━━━━━━`, ``];
 
       if (data.winner === 'draw') {
         if (!data.p1IsBot) addXP(data.p1Jid, 20, 'duel_draw_web');
         if (!data.p2IsBot) addXP(data.p2Jid, 20, 'duel_draw_web');
         msgLines.push(`🤝 *EMPATE!* Ambos recebem _+20 XP_`);
-
       } else {
         const winnerJid = data.winner === 'p1' ? data.p1Jid : data.p2Jid;
         const loserJid  = data.winner === 'p1' ? data.p2Jid : data.p1Jid;
@@ -59,9 +55,26 @@ function pollResult(sock, from, roomId, p1Jid, p2Jid) {
       await sock.sendMessage(from, { text: msgLines.join('\n'), mentions }).catch(() => {});
 
     } catch (_) {
-      // sala ainda não encerrada ou erro de rede — tenta novamente
+      // sala ainda ativa ou erro de rede — tenta na próxima iteração
     }
   }, 60_000);
+}
+
+// ─── Busca bônus de relíquia com log de diagnóstico ──────────────────────────
+function fetchBonus(jid) {
+  try {
+    const bonus = getBattleBonus(jid);
+    const keys  = Object.keys(bonus || {});
+    if (keys.length > 0) {
+      console.log(`[DUEL] Relíquia ativa para ${jid.split('@')[0]}:`, JSON.stringify(bonus));
+    } else {
+      console.log(`[DUEL] Sem relíquia equipada para ${jid.split('@')[0]}`);
+    }
+    return bonus || {};
+  } catch (err) {
+    console.error(`[DUEL] Erro ao buscar bonus para ${jid}:`, err.message);
+    return {};
+  }
 }
 
 module.exports = {
@@ -76,7 +89,7 @@ module.exports = {
         return sock.sendMessage(from, { text: helpText() });
 
       const p1Num   = sender.split('@')[0];
-      const p1Bonus = getBattleBonus(sender);
+      const p1Bonus = fetchBonus(sender);
 
       const vsBot = args.some(a =>
         a.replace(/^@/, '').toLowerCase() === 'sentinel'
@@ -91,18 +104,24 @@ module.exports = {
           ({ data } = await axios.post(
             `${SERVER}/room`,
             { p1Jid: sender, isVsBot: true, difficulty: diff, p1Bonus },
-            { timeout: 15000 }
+            {
+              timeout: 15000,
+              headers: { 'Content-Type': 'application/json' },
+            }
           ));
         } catch (e) {
           console.error('[DUEL] Falha ao criar sala vs bot:', e.message);
           return sock.sendMessage(from, { text: '❌ Servidor de duelos indisponível. Tente novamente.' });
         }
 
-        const link       = genUrl(data.roomId, 'p1');
-        const diffLabel  = { easy: '🟢 Fácil', medium: '🟡 Médio', hard: '🔴 Difícil' }[diff];
+        const link      = genUrl(data.roomId, 'p1');
+        const diffLabel = { easy: '🟢 Fácil', medium: '🟡 Médio', hard: '🔴 Difícil', ai: '🤖 IA' }[diff] || diff;
+        const relicInfo = Object.keys(p1Bonus).length
+          ? `\n🔮 Relíquia ativa: ${Object.entries(p1Bonus).map(([k,v]) => `${k}: +${v}`).join(' | ')}`
+          : '';
 
         await sock.sendMessage(sender, {
-          text: `⚔️ *Duelo contra Sentinel — ${diffLabel}*\n\n🔗 ${link}\n\n⏳ Link válido por 20 min`,
+          text: `⚔️ *Duelo contra Sentinel — ${diffLabel}*${relicInfo}\n\n🔗 ${link}\n\n⏳ Link válido por 20 min`,
         });
 
         await sock.sendMessage(from, {
@@ -110,7 +129,6 @@ module.exports = {
           mentions: [sender],
         });
 
-        // Inicia polling para XP (sender = p1, bot = p2)
         pollResult(sock, from, data.roomId, sender, 'sentinel@s.whatsapp.net');
         return;
       }
@@ -127,14 +145,17 @@ module.exports = {
         return sock.sendMessage(from, { text: '😐 Você não pode duelar consigo mesmo.' });
 
       const p2Num   = p2Jid.split('@')[0];
-      const p2Bonus = getBattleBonus(p2Jid);
+      const p2Bonus = fetchBonus(p2Jid);
 
       let data;
       try {
         ({ data } = await axios.post(
           `${SERVER}/room`,
           { p1Jid: sender, p2Jid, isVsBot: false, p1Bonus, p2Bonus },
-          { timeout: 15000 }
+          {
+            timeout: 15000,
+            headers: { 'Content-Type': 'application/json' },
+          }
         ));
       } catch (e) {
         console.error('[DUEL] Falha ao criar sala pvp:', e.message);
@@ -157,11 +178,10 @@ module.exports = {
         mentions: [sender, p2Jid],
       });
 
-      // Inicia polling para XP de ambos os jogadores
       pollResult(sock, from, data.roomId, sender, p2Jid);
 
     } catch (err) {
-      console.error('[DUEL ERROR]', err.message);
+      console.error('[DUEL ERROR]', err.message, err.stack);
       return sock.sendMessage(from, { text: '❌ Erro inesperado no sistema de duelos.' });
     }
   },
@@ -169,9 +189,11 @@ module.exports = {
 
 function helpText() {
   return [
-    '⚔️ *DUELO RPG*', '',
+    '⚔️ *DUELO RPG (via web)*', '',
     '`!duel @usuário` — duelo PvP',
     '`!duel @Sentinel` — vs bot (médio)',
-    '`!duel @Sentinel easy|medium|hard` — escolher dificuldade',
+    '`!duel @Sentinel easy|medium|hard|ai` — escolher dificuldade',
+    '',
+    '🔮 Equipe uma relíquia com `!equipar relic <id>` para bônus de batalha!',
   ].join('\n');
 }
