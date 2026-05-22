@@ -52,25 +52,10 @@ body{background:var(--bg);color:var(--txt);font-family:system-ui,sans-serif;disp
 
 <div id="reconn">🔄 Reconectando...</div>
 
-<!-- ═══════════════════════════════════════════════════════
-     ÁUDIO — myinstants CDN direto
-     ═══════════════════════════════════════════════════════ -->
-<audio id="snd-click"
-       src="https://www.myinstants.com/media/sounds/minecraft-click-cropped.mp3"
-       preload="auto"></audio>
-
-<audio id="snd-bg"
-       src="https://www.myinstants.com/media/sounds/doors-elevator-music.mp3"
-       preload="auto"
-       loop></audio>
-
-<audio id="snd-win"
-       src="https://www.myinstants.com/media/sounds/end-brawl-stars-win.mp3"
-       preload="auto"></audio>
-
-<audio id="snd-lose"
-       src="https://www.myinstants.com/media/sounds/faith-mortis.mp3"
-       preload="auto"></audio>
+<audio id="snd-click" src="https://www.myinstants.com/media/sounds/minecraft-click-cropped.mp3" preload="auto"></audio>
+<audio id="snd-bg"    src="https://www.myinstants.com/media/sounds/doors-elevator-music.mp3"    preload="auto" loop></audio>
+<audio id="snd-win"   src="https://www.myinstants.com/media/sounds/end-brawl-stars-win.mp3"     preload="auto"></audio>
+<audio id="snd-lose"  src="https://www.myinstants.com/media/sounds/faith-mortis.mp3"             preload="auto"></audio>
 
 <div class="wrap">
 
@@ -79,9 +64,7 @@ body{background:var(--bg);color:var(--txt);font-family:system-ui,sans-serif;disp
     <div id="loading-msg" style="margin-top:10px;color:var(--mut)">Conectando...</div>
   </div>
 
-  <!-- ── TELA DE BATALHA ──────────────────────────────────── -->
   <div id="battle" class="hidden">
-
     <div class="card" style="flex-direction:row;display:flex;justify-content:space-between;align-items:center;padding:8px 12px">
       <span style="font-size:13px;font-weight:700">⚔️ DUEL</span>
       <span id="rbadge" style="background:var(--pur);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">Round 1</span>
@@ -125,10 +108,8 @@ body{background:var(--bg);color:var(--txt);font-family:system-ui,sans-serif;disp
       <button class="btn sp w3" onclick="showSp()">🔮 Magia — escolher feitiço</button>
     </div>
     <div id="waitmsg" class="wait hidden">⏳ Aguardando oponente...</div>
+  </div>
 
-  </div><!-- /#battle -->
-
-  <!-- ── TELA FINAL ────────────────────────────────────────── -->
   <div id="endscreen" class="hidden">
     <div class="end">
       <div class="end-e" id="end-e">🏆</div>
@@ -138,9 +119,8 @@ body{background:var(--bg);color:var(--txt);font-family:system-ui,sans-serif;disp
     <div class="log" id="end-log" style="max-height:300px"></div>
   </div>
 
-</div><!-- /.wrap -->
+</div>
 
-<!-- ── PAINEL DE MAGIAS ─────────────────────────────────────── -->
 <div id="spov" class="ov hidden">
   <div class="sp-panel">
     <div class="sp-title">🔮 Escolher Magia</div>
@@ -153,6 +133,12 @@ body{background:var(--bg);color:var(--txt);font-family:system-ui,sans-serif;disp
 <script>
 // ═══════════════════════════════════════════════════════════
 // SISTEMA DE ÁUDIO
+// ─────────────────────────────────────────────────────────
+// Navegadores bloqueiam autoplay sem gesto do usuário.
+// Estratégia:
+//   • click/win/lose → sempre disparados por interação, sem problema.
+//   • bg → marcado como "pendente" se o play() for rejeitado,
+//     e retomado automaticamente no primeiro clique do usuário.
 // ═══════════════════════════════════════════════════════════
 
 const Audio = (() => {
@@ -161,19 +147,18 @@ const Audio = (() => {
   const _win   = document.getElementById('snd-win');
   const _lose  = document.getElementById('snd-lose');
 
-  // Volumes
   if (_bg)    _bg.volume    = 0.35;
   if (_win)   _win.volume   = 0.80;
   if (_lose)  _lose.volume  = 0.80;
   if (_click) _click.volume = 0.55;
 
-  let _bgPlaying = false;
-  let _endPlayed = false;
+  let _bgPlaying = false; // música está tocando agora
+  let _bgWanted  = false; // música deveria tocar (aguarda gesto)
+  let _endPlayed = false; // som de fim já tocou
 
   function _play(el) {
-    if (!el) return;
-    const p = el.play();
-    if (p && typeof p.catch === 'function') p.catch(() => {});
+    if (!el) return Promise.resolve();
+    return el.play().catch(() => {});
   }
 
   function _stop(el) {
@@ -183,29 +168,44 @@ const Audio = (() => {
   }
 
   return {
-    // Clique nos botões — reinicia o sample para resposta imediata
+    // ── Toca o clique (sempre ativado por gesto — sem restrição)
     click() {
       if (!_click) return;
       _click.currentTime = 0;
       _play(_click);
     },
 
-    // Inicia a música de fundo em loop (só executa uma vez por sessão)
+    // ── Solicita início da música de fundo.
+    //    Se o navegador rejeitar (autoplay), marca como pendente
+    //    e o primeiro clique do usuário a retoma via tryResumeBg().
     startBg() {
       if (_bgPlaying || !_bg) return;
+      _bgWanted = true;
       _bg.currentTime = 0;
-      _play(_bg);
-      _bgPlaying = true;
+      _play(_bg).then(() => {
+        _bgPlaying = true;
+      }).catch(() => {
+        // Bloqueado — será retomado em tryResumeBg()
+      });
     },
 
-    // Para a música imediatamente
+    // ── Chamado em cada interação do usuário.
+    //    Se a música estava pendente, tenta iniciar agora.
+    tryResumeBg() {
+      if (!_bgWanted || _bgPlaying || !_bg) return;
+      _play(_bg).then(() => {
+        _bgPlaying = true;
+      }).catch(() => {});
+    },
+
+    // ── Para a música imediatamente
     stopBg() {
-      if (!_bg) return;
-      _stop(_bg);
+      _bgWanted  = false;
       _bgPlaying = false;
+      _stop(_bg);
     },
 
-    // Toca vitória ou derrota uma única vez e para a música de fundo
+    // ── Fim de partida: para música e toca fanfarra (uma única vez)
     playEnd(won) {
       if (_endPlayed) return;
       _endPlayed = true;
@@ -213,7 +213,7 @@ const Audio = (() => {
       _play(won ? _win : _lose);
     },
 
-    // Empate: apenas para a música (sem fanfarra)
+    // ── Empate: apenas para a música
     playDraw() {
       if (_endPlayed) return;
       _endPlayed = true;
@@ -222,9 +222,18 @@ const Audio = (() => {
   };
 })();
 
-// ── Delegação de clique para TODOS os botões interativos ─────
-// Cobre: .btn, .scard e .cls-btn, incluindo os criados dinamicamente
+// ═══════════════════════════════════════════════════════════
+// DELEGAÇÃO DE CLIQUE
+// ─────────────────────────────────────────────────────────
+// 1. Tenta retomar a música de fundo (se estava pendente).
+// 2. Toca o clique em qualquer botão interativo.
+// ═══════════════════════════════════════════════════════════
+
 document.addEventListener('click', e => {
+  // Retoma bg se estava aguardando gesto
+  Audio.tryResumeBg();
+
+  // Som de clique nos botões
   const btn = e.target.closest('.btn, .scard, .cls-btn');
   if (btn && !btn.disabled) Audio.click();
 }, true);
@@ -272,7 +281,7 @@ const socket = io("https://sentinel-game-3.onrender.com", {
 
 let state     = null;
 let sent      = false;
-let bgStarted = false; // garante que startBg() só é chamado uma vez
+let bgStarted = false; // startBg() chamado no máximo uma vez
 
 socket.on('connect', () => {
   document.getElementById('reconn').style.display = 'none';
@@ -304,7 +313,7 @@ const esc = s  => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/
 const pct = (v, m) => (Math.max(0, v) / Math.max(1, m) * 100).toFixed(1) + '%';
 
 // ═══════════════════════════════════════════════════════════
-// RENDER PRINCIPAL
+// RENDER
 // ═══════════════════════════════════════════════════════════
 
 function render() {
@@ -313,7 +322,8 @@ function render() {
 
   if (state.phase === 'ended') { renderEnd(); return; }
 
-  // Inicia música de fundo assim que a batalha começa
+  // Solicita início da música — se o gesto já ocorreu toca imediatamente,
+  // senão fica pendente e tryResumeBg() a retoma no próximo clique.
   if (!bgStarted) {
     bgStarted = true;
     Audio.startBg();
@@ -327,7 +337,6 @@ function render() {
   const en = state[ENEMY];
   if (!me || !en) return;
 
-  // ── Inimigo
   el('ename').textContent  = en.isBot ? '🤖 Sentinel' : '👤 Oponente';
   el('ehp').textContent    = `${Math.max(0, en.hp)}/${en.maxHp}`;
   el('ehpb').style.width   = pct(en.hp, en.maxHp);
@@ -339,7 +348,6 @@ function render() {
   el('eefx').textContent   = (en.effects || []).map(e => e.type).join(' ') || '';
   el('eready').textContent = en.action ? '✅' : '';
 
-  // ── Jogador
   el('myhp').textContent     = `${Math.max(0, me.hp)}/${me.maxHp}`;
   el('myhpb').style.width    = pct(me.hp, me.maxHp);
   el('mymana').textContent   = `${Math.max(0, me.mana)}/${me.maxMana}`;
@@ -351,7 +359,6 @@ function render() {
   el('myefx').textContent    = (me.effects || []).map(e => e.type).join(' ') || '';
   el('myready').textContent  = me.action ? '✅ aguardando...' : '';
 
-  // ── Estado dos botões de energia/recurso
   el('btn-pesado').disabled = (me.energy || 0) < 15;
   el('btn-contra').disabled = (me.energy || 0) < 20;
   el('btn-break').disabled  = (me.energy || 0) < 25;
@@ -363,7 +370,6 @@ function render() {
   el('waitmsg').classList.toggle('hidden', !acted);
   if (!acted) sent = false;
 
-  // ── Log de combate
   const logEl = el('log');
   if (state.log?.length) {
     logEl.innerHTML = state.log.slice(-50)
@@ -409,7 +415,7 @@ function renderEnd() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// AÇÕES DO JOGADOR
+// AÇÕES
 // ═══════════════════════════════════════════════════════════
 
 window.act = action => {
@@ -418,7 +424,6 @@ window.act = action => {
   socket.emit('action', { roomId: ROOM, player: PLAYER, action });
 };
 
-// ── Painel de magias
 window.showSp = () => {
   const me = state?.[PLAYER];
   if (!me || state?.phase !== 'fighting' || sent) return;
@@ -454,7 +459,6 @@ window.showSp = () => {
 
 window.hideSp = () => el('spov').classList.add('hidden');
 
-// Fecha o painel ao clicar fora dele
 el('spov').addEventListener('click', e => {
   if (e.target === el('spov')) hideSp();
 });
