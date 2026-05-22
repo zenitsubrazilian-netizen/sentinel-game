@@ -218,7 +218,7 @@ canvas{display:block;touch-action:none}
 <!-- ══════════════════════════════════════
      GAME CANVAS
 ═══════════════════════════════════════ -->
-<canvas id="gc"></canvas>
+<canvas id="gc" style="display:none"></canvas>
 
 <!-- ══════════════════════════════════════
      HUD
@@ -876,6 +876,8 @@ document.getElementById('btn-jump').addEventListener('mousedown', e => { e.preve
 // INICIAR JOGO
 // ═══════════════════════════════════════════════════════════════
 function startGame() {
+  document.getElementById('gc').style.display = 'block';
+  document.getElementById('particles').style.display = 'block';
   document.getElementById('lobby').style.display    = 'none';
   document.getElementById('hud').style.display      = 'flex';
   document.getElementById('controls').style.display = 'flex';
