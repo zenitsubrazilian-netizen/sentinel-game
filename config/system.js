@@ -6,7 +6,7 @@
 // ============================================================
 
 module.exports = {
-  VERSION:         'Funcionando ✅️',
+  VERSION:         'Instável ⚠️',
   BOT_NAME:        'Sentinel-Bot',
   MAIN_GROUP:      '120363426463059849@g.us',
   SENTINEL_PREFIX: '*Sentinel 🛡:*\n',
