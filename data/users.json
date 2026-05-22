@@ -1,13 +1,13 @@
 {
   "115809867276438@lid": {
-    "xp": 28,
+    "xp": 128,
     "level": 16,
     "coins": 1207,
     "streak": 0,
     "lastDaily": 1779413367655,
     "lastWeekly": 1778936867368,
-    "lastXP": 1779484523653,
-    "lastActive": 1779484523653,
+    "lastXP": 1779486050971,
+    "lastActive": 1779486050971,
     "messages": 1195,
     "inventory": {
       "frames": [
@@ -53,10 +53,10 @@
       "legend_speaker"
     ],
     "stats": {
-      "totalXP": 41365,
+      "totalXP": 41465,
       "totalMessages": 1195,
       "totalCoins": 146920,
-      "minigamesWon": 239,
+      "minigamesWon": 240,
       "eventsWon": 0,
       "dailyClaimed": 6,
       "weeklyClaimed": 1

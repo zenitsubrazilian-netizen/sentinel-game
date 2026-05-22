@@ -10,13 +10,7 @@
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
 html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:system-ui,sans-serif}
 canvas{display:block;touch-action:none}
-#lobby{
-  position:fixed;inset:0;
-  background:linear-gradient(135deg,#0d0d1a 0%,#1a0d2e 100%);
-  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
-  overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
-  z-index:100;padding:10px 15px 80px;gap:12px;
-}
+#lobby{position:fixed;inset:0;background:linear-gradient(135deg,#0d0d1a 0%,#1a0d2e 100%);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;z-index:100;padding:10px 15px 80px;gap:12px}
 #lobby h1{font-size:clamp(20px,6vw,32px);color:#f59e0b;text-shadow:0 0 20px #f59e0b88;letter-spacing:2px;margin:5px 0}
 #lobby h2{font-size:clamp(12px,3vw,16px);color:#7c3aed;margin:-5px 0 10px}
 .lcard{background:#151528;border:1px solid #252548;border-radius:12px;padding:10px;width:100%;max-width:min(460px,calc(100vw - 30px));flex-shrink:0}
@@ -43,7 +37,7 @@ canvas{display:block;touch-action:none}
 .hud-side.right{align-items:flex-end}
 .hud-name{font-size:11px;font-weight:700;color:#e2e8f0;text-shadow:1px 1px 2px #000}
 .hud-bar-bg{height:10px;background:#1e1e38;border-radius:5px;overflow:hidden;width:130px}
-.hud-bar-fill{height:100%;border-radius:5px;transition:width .15s}
+.hud-bar-fill{height:100%;border-radius:5px;transition:width .1s linear}
 .hp-fill{background:linear-gradient(90deg,#7f1d1d,#ef4444)}
 .ult-fill{background:linear-gradient(90deg,#78350f,#f59e0b)}
 .hud-vals{font-size:9px;color:#94a3b8}
@@ -56,10 +50,10 @@ canvas{display:block;touch-action:none}
 #btn-jump{width:54px;height:54px;border-radius:50%;background:rgba(16,185,129,.25);border:2px solid #10b981;color:#10b981;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .abtn{width:58px;height:58px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;cursor:pointer;border:2px solid;flex-direction:column;line-height:1.2;text-align:center}
 .abtn:active{transform:scale(.88);opacity:.7}
-#btn-light {background:rgba(239,68,68,.2); border-color:#ef4444;color:#ef4444}
-#btn-heavy {background:rgba(245,158,11,.2);border-color:#f59e0b;color:#f59e0b}
-#btn-block {background:rgba(59,130,246,.2);border-color:#3b82f6;color:#3b82f6}
-#btn-ult   {background:rgba(168,85,247,.2);border-color:#a855f7;color:#a855f7}
+#btn-light{background:rgba(239,68,68,.2);border-color:#ef4444;color:#ef4444}
+#btn-heavy{background:rgba(245,158,11,.2);border-color:#f59e0b;color:#f59e0b}
+#btn-block{background:rgba(59,130,246,.2);border-color:#3b82f6;color:#3b82f6}
+#btn-ult{background:rgba(168,85,247,.2);border-color:#a855f7;color:#a855f7}
 #btn-special{background:rgba(20,184,166,.2);border-color:#14b8a6;color:#14b8a6;width:46px;height:46px;font-size:10px}
 #end-overlay{position:fixed;inset:0;background:rgba(0,0,0,.82);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:200;gap:12px}
 #end-overlay.hidden{display:none}
@@ -80,34 +74,22 @@ canvas{display:block;touch-action:none}
 </style>
 </head>
 <body>
-
 <div id="rotate-hint"><span>📱</span><p>Gire o dispositivo para o modo <strong>paisagem</strong> para jogar!</p></div>
 <div id="reconn">🔄 Reconectando...</div>
 
-<!-- LOBBY -->
 <div id="lobby">
-  <h1>⚔️ DUEL ARENA</h1>
-  <h2>2D FIGHTER</h2>
-  <div class="lcard">
-    <h3>👤 Seu Nickname</h3>
+  <h1>⚔️ DUEL ARENA</h1><h2>2D FIGHTER</h2>
+  <div class="lcard"><h3>👤 Seu Nickname</h3>
     <input id="nick-input" type="text" maxlength="16" placeholder="Digite seu nome..." autocomplete="off">
   </div>
-  <div class="lcard">
-    <h3>🥷 Escolha seu Personagem</h3>
-    <div class="chars" id="char-select"></div>
-  </div>
-  <div class="lcard" id="skin-card">
-    <h3>🎨 Cor / Skin</h3>
-    <div class="skins" id="skin-select"></div>
-  </div>
+  <div class="lcard"><h3>🥷 Escolha seu Personagem</h3><div class="chars" id="char-select"></div></div>
+  <div class="lcard" id="skin-card"><h3>🎨 Cor / Skin</h3><div class="skins" id="skin-select"></div></div>
   <button id="ready-btn">⚔️ PRONTO PARA DUELAR</button>
   <div id="status-msg">Aguardando conexão...</div>
 </div>
 
-<!-- CANVAS -->
 <canvas id="gc" style="display:none"></canvas>
 
-<!-- HUD -->
 <div id="hud" style="display:none">
   <div class="hud-side left">
     <div class="hud-name" id="hud-p1-name">P1</div>
@@ -128,7 +110,6 @@ canvas{display:block;touch-action:none}
 </div>
 <div id="effect-bar"></div>
 
-<!-- CONTROLES -->
 <div id="controls" style="display:none">
   <div id="left-controls">
     <div id="joystick-zone"><div id="joystick-knob"></div></div>
@@ -145,7 +126,6 @@ canvas{display:block;touch-action:none}
 
 <div id="hit-texts"></div>
 
-<!-- END OVERLAY -->
 <div id="end-overlay" class="hidden">
   <div id="end-icon">🏆</div>
   <div id="end-title">VITÓRIA!</div>
@@ -157,29 +137,26 @@ canvas{display:block;touch-action:none}
 <script src="/socket.io/socket.io.js"></script>
 <script>
 'use strict';
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 // CONSTANTES
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 const ARENA_W   = 800;
 const ARENA_H   = 450;
-const FLOOR_Y   = 340;
+const FLOOR_Y   = 340;   // posição Y do chão (arena coords)
 const MAX_HP    = 120;
 const ROUND_DUR = 60;
 
 const CHARS = [
-  { id:'warrior', name:'Guerreiro', emoji:'⚔️' },
-  { id:'mage',    name:'Mago',      emoji:'🧙' },
-  { id:'ninja',   name:'Ninja',     emoji:'🥷' },
-  { id:'demon',   name:'Demônio',   emoji:'👹' },
+  { id:'warrior', name:'Guerreiro' },
+  { id:'mage',    name:'Mago'      },
+  { id:'ninja',   name:'Ninja'     },
+  { id:'demon',   name:'Demônio'   },
 ];
-const SKINS = [
-  '#ef4444','#f97316','#eab308','#22c55e',
-  '#3b82f6','#8b5cf6','#ec4899','#e2e8f0',
-];
+const SKINS = ['#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899','#e2e8f0'];
 
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 // URL PARAMS
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 const params = new URLSearchParams(location.search);
 const ROOM   = params.get('room');
 const PSLOT  = params.get('player');
@@ -190,9 +167,9 @@ if (!ROOM || !['p1','p2'].includes(PSLOT)) {
   throw new Error('bad link');
 }
 
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 // ORIENTAÇÃO
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 function checkOrientation() {
   document.getElementById('rotate-hint').style.display =
     window.innerWidth < window.innerHeight ? 'flex' : 'none';
@@ -201,120 +178,230 @@ window.addEventListener('resize', checkOrientation);
 window.addEventListener('orientationchange', checkOrientation);
 checkOrientation();
 
-// ═══════════════════════════════════════════════════════════════
-// CANVAS
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+// CANVAS + CACHE DE ESCALA
+// ═══════════════════════════════════════════════════════
 const canvas = document.getElementById('gc');
-const ctx    = canvas.getContext('2d', { alpha: false, willReadFrequently: false });
+const ctx    = canvas.getContext('2d', { alpha: false, desynchronized: true });
 ctx.imageSmoothingEnabled = false;
 
-function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+// Cache de transformação — recalculado só no resize
+let SC = { scale: 1, offX: 0, offY: 0 };
+
+function recalcScale() {
+  const sx = canvas.width  / ARENA_W;
+  const sy = canvas.height / ARENA_H;
+  SC.scale = Math.min(sx, sy);
+  SC.offX  = (canvas.width  - ARENA_W * SC.scale) / 2;
+  SC.offY  = (canvas.height - ARENA_H * SC.scale) / 2;
+}
+
+function toSX(ax) { return SC.offX + ax * SC.scale; }
+function toSY(ay) { return SC.offY + ay * SC.scale; }
+
+function resizeCanvas() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+  recalcScale();
+  rebuildCache(); // recria gradientes em cache
+}
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
-function toScreen(ax, ay) {
-  const scaleX = canvas.width  / ARENA_W;
-  const scaleY = canvas.height / ARENA_H;
-  const scale  = Math.min(scaleX, scaleY);
-  const offX   = (canvas.width  - ARENA_W * scale) / 2;
-  const offY   = (canvas.height - ARENA_H * scale) / 2;
-  return { x: offX + ax * scale, y: offY + ay * scale, scale };
+// ═══════════════════════════════════════════════════════
+// CACHE DE GRADIENTES — criados 1x, reutilizados sempre
+// PRINCIPAL causa dos 3 FPS: gradientes criados a cada frame
+// ═══════════════════════════════════════════════════════
+let bgGrad      = null;   // fundo
+let floorGrad   = null;   // chão
+let torchGlow1  = null;   // glow tocha esq
+let torchGlow2  = null;   // glow tocha dir
+let bgCanvas    = null;   // fundo pré-renderizado (offscreen)
+
+function rebuildCache() {
+  const W = canvas.width;
+  const H = canvas.height;
+
+  // Gradiente do fundo
+  bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+  bgGrad.addColorStop(0,   '#030712');
+  bgGrad.addColorStop(0.5, '#0d0d1a');
+  bgGrad.addColorStop(1,   '#0d1a0d');
+
+  // Gradiente do chão
+  const fy = toSY(FLOOR_Y);
+  floorGrad = ctx.createLinearGradient(0, fy, 0, fy + 30 * SC.scale);
+  floorGrad.addColorStop(0, '#1e3a1e');
+  floorGrad.addColorStop(1, '#0d1a0d');
+
+  // Glow das tochas (radial, estático — só posição muda)
+  const tx1 = toSX(60),         ty1 = toSY(FLOOR_Y - 30);
+  const tx2 = toSX(ARENA_W-60), ty2 = toSY(FLOOR_Y - 30);
+  torchGlow1 = ctx.createRadialGradient(tx1, ty1, 0, tx1, ty1, 40 * SC.scale);
+  torchGlow1.addColorStop(0, 'rgba(245,158,11,0.22)');
+  torchGlow1.addColorStop(1, 'rgba(245,158,11,0)');
+  torchGlow2 = ctx.createRadialGradient(tx2, ty2, 0, tx2, ty2, 40 * SC.scale);
+  torchGlow2.addColorStop(0, 'rgba(245,158,11,0.22)');
+  torchGlow2.addColorStop(1, 'rgba(245,158,11,0)');
+
+  // Fundo estático pré-renderizado num OffscreenCanvas (estrelas, plataforma)
+  // Evita redesenhar elementos que nunca mudam
+  bgCanvas = document.createElement('canvas');
+  bgCanvas.width  = W;
+  bgCanvas.height = H;
+  const bc = bgCanvas.getContext('2d', { alpha: false });
+  bc.imageSmoothingEnabled = false;
+
+  // Fundo
+  bc.fillStyle = bgGrad; // reutiliza o mesmo gradiente
+  // Reconstrói o gradiente no contexto do bgCanvas
+  const bg2 = bc.createLinearGradient(0, 0, 0, H);
+  bg2.addColorStop(0,   '#030712');
+  bg2.addColorStop(0.5, '#0d0d1a');
+  bg2.addColorStop(1,   '#0d1a0d');
+  bc.fillStyle = bg2;
+  bc.fillRect(0, 0, W, H);
+
+  // Estrelas estáticas
+  bc.fillStyle = 'rgba(255,255,255,0.5)';
+  for (let i = 0; i < 25; i++) {
+    const sx = (i * 137.508 * W) % W;
+    const sy = (i * 97.3   * H / 2) % (H * 0.55);
+    bc.beginPath();
+    bc.arc(sx, sy, i % 3 === 0 ? 1.5 : 0.8, 0, Math.PI * 2);
+    bc.fill();
+  }
+
+  // Glow tochas (estático — só a chama anima)
+  bc.globalAlpha = 0.6;
+  bc.fillStyle   = bc.createRadialGradient(tx1, ty1, 0, tx1, ty1, 40 * SC.scale);
+  bc.fillStyle.constructor; // workaround — recria no bgCanvas
+  const tg1b = bc.createRadialGradient(tx1, ty1, 0, tx1, ty1, 40 * SC.scale);
+  tg1b.addColorStop(0, 'rgba(245,158,11,0.22)'); tg1b.addColorStop(1, 'rgba(245,158,11,0)');
+  const tg2b = bc.createRadialGradient(tx2, ty2, 0, tx2, ty2, 40 * SC.scale);
+  tg2b.addColorStop(0, 'rgba(245,158,11,0.22)'); tg2b.addColorStop(1, 'rgba(245,158,11,0)');
+  bc.fillStyle = tg1b;
+  bc.beginPath(); bc.arc(tx1, ty1, 40 * SC.scale, 0, Math.PI * 2); bc.fill();
+  bc.fillStyle = tg2b;
+  bc.beginPath(); bc.arc(tx2, ty2, 40 * SC.scale, 0, Math.PI * 2); bc.fill();
+  bc.globalAlpha = 1;
+
+  // Postes das tochas
+  bc.fillStyle = '#92400e';
+  bc.fillRect(tx1 - 3*SC.scale, ty1, 6*SC.scale, 20*SC.scale);
+  bc.fillRect(tx2 - 3*SC.scale, ty2, 6*SC.scale, 20*SC.scale);
+
+  // Plataforma central
+  const px = toSX(ARENA_W/2 - 60), py = toSY(FLOOR_Y - 8);
+  bc.fillStyle   = '#1e293b';
+  bc.fillRect(px, py, 120 * SC.scale, 10 * SC.scale);
+  bc.strokeStyle = '#334155'; bc.lineWidth = 1;
+  bc.strokeRect(px, py, 120 * SC.scale, 10 * SC.scale);
 }
 
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 // SPRITES
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 function shadeColor(hex, amt) {
   try {
-    let r = parseInt(hex.slice(1,3),16)+amt, g = parseInt(hex.slice(3,5),16)+amt, b = parseInt(hex.slice(5,7),16)+amt;
-    r = Math.max(0,Math.min(255,r)); g = Math.max(0,Math.min(255,g)); b = Math.max(0,Math.min(255,b));
+    const r = Math.max(0, Math.min(255, parseInt(hex.slice(1,3),16)+amt));
+    const g = Math.max(0, Math.min(255, parseInt(hex.slice(3,5),16)+amt));
+    const b = Math.max(0, Math.min(255, parseInt(hex.slice(5,7),16)+amt));
     return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
-  } catch(e){ return hex; }
+  } catch(e) { return hex; }
 }
 
-function drawCharacterSprite(ctx2, charId, skinColor, x, y, scale, flipped, state, frame) {
+// Cache de cores por skin (evita shadeColor a cada frame)
+const skinCache = new Map();
+function getSkinColors(skin) {
+  if (!skinCache.has(skin)) {
+    skinCache.set(skin, { c: skin, dark: shadeColor(skin,-40), lite: shadeColor(skin,+50) });
+  }
+  return skinCache.get(skin);
+}
+
+function drawCharacterSprite(ctx2, charId, skin, x, y, scale, flipped, state, frame) {
+  const { c, dark, lite } = getSkinColors(skin);
   ctx2.save();
-  if (flipped) { ctx2.translate(x + 24*scale, y); ctx2.scale(-1,1); x = 0; }
+  if (flipped) { ctx2.translate(x + 24*scale, y); ctx2.scale(-1, 1); x = 0; }
   else           ctx2.translate(x, y);
   ctx2.scale(scale, scale);
-  const c    = skinColor || '#ef4444';
-  const dark = shadeColor(c, -40);
-  const lite = shadeColor(c, +50);
-  const bobY = state === 'walk' ? Math.sin(frame * 0.4) * 2 : 0;
-  const atkX = state === 'attack' ? Math.sin(frame * 1.2) * 3 : 0;
-  switch(charId) {
-    case 'mage':  drawMage(ctx2,c,dark,lite,bobY,atkX,state);  break;
-    case 'ninja': drawNinja(ctx2,c,dark,lite,bobY,atkX,state); break;
-    case 'demon': drawDemon(ctx2,c,dark,lite,bobY,atkX,state); break;
-    default:      drawWarrior(ctx2,c,dark,lite,bobY,atkX,state);
+  const by = state === 'walk' ? Math.sin(frame * 0.4) * 2 : 0;
+  const ax = state === 'attack' ? Math.sin(frame * 1.2) * 3 : 0;
+  switch (charId) {
+    case 'mage':  drawMage(ctx2,c,dark,lite,by,ax,state);  break;
+    case 'ninja': drawNinja(ctx2,c,dark,lite,by,ax,state); break;
+    case 'demon': drawDemon(ctx2,c,dark,lite,by,ax,state); break;
+    default:      drawWarrior(ctx2,c,dark,lite,by,ax,state);
   }
   ctx2.restore();
 }
 
-function drawWarrior(c2,c,dark,lite,by,ax,st){
-  c2.fillStyle=dark; c2.fillRect(6,30+by,7,14); c2.fillRect(15,30+by,7,14);
-  c2.fillStyle=c;    c2.fillRect(4,16+by,20,16);
-  c2.fillStyle=lite; c2.fillRect(7,18+by,14,10);
+function drawWarrior(c2,c,d,l,by,ax,st) {
+  const isAtk = st==='attack';
+  c2.fillStyle=d; c2.fillRect(6,30+by,7,14); c2.fillRect(15,30+by,7,14);
+  c2.fillStyle=c; c2.fillRect(4,16+by,20,16);
+  c2.fillStyle=l; c2.fillRect(7,18+by,14,10);
   c2.fillStyle='#d4a96a'; c2.fillRect(7,4+by,14,12);
-  c2.fillStyle=c;    c2.fillRect(5,2+by,18,7); c2.fillRect(5,7+by,3,5); c2.fillRect(20,7+by,3,5);
+  c2.fillStyle=c; c2.fillRect(5,2+by,18,7); c2.fillRect(5,7+by,3,5); c2.fillRect(20,7+by,3,5);
   c2.fillStyle='#fff'; c2.fillRect(8,5+by,3,3); c2.fillRect(15,5+by,3,3);
   c2.fillStyle='#000'; c2.fillRect(9,6+by,2,2); c2.fillRect(16,6+by,2,2);
-  c2.fillStyle='#94a3b8'; c2.fillRect(22+(st==='attack'?ax:0),st==='attack'?14+by:18+by,3,st==='attack'?20:16);
-  c2.fillStyle='#f59e0b'; c2.fillRect(19+(st==='attack'?ax:0),st==='attack'?22+by:24+by,9,3);
-  c2.fillStyle=dark; c2.fillRect(-4,16+by,6,12);
-  c2.fillStyle=lite; c2.fillRect(-3,18+by,4,8);
+  c2.fillStyle='#94a3b8';
+  c2.fillRect(22+(isAtk?ax:0), isAtk?14+by:18+by, 3, isAtk?20:16);
+  c2.fillStyle='#f59e0b';
+  c2.fillRect(19+(isAtk?ax:0), isAtk?22+by:24+by, 9, 3);
+  c2.fillStyle=d; c2.fillRect(-4,16+by,6,12);
+  c2.fillStyle=l; c2.fillRect(-3,18+by,4,8);
 }
-function drawMage(c2,c,dark,lite,by,ax,st){
+function drawMage(c2,c,d,l,by,ax,st) {
+  const isAtk = st==='attack';
   c2.fillStyle=c; c2.beginPath(); c2.moveTo(4,16+by); c2.lineTo(24,16+by); c2.lineTo(26,44+by); c2.lineTo(2,44+by); c2.closePath(); c2.fill();
-  c2.fillStyle=lite; c2.fillRect(10,17+by,8,14);
+  c2.fillStyle=l; c2.fillRect(10,17+by,8,14);
   c2.fillStyle='#d4a96a'; c2.fillRect(7,6+by,14,11);
-  c2.fillStyle=dark; c2.beginPath(); c2.moveTo(14,-2+by); c2.lineTo(22,10+by); c2.lineTo(5,10+by); c2.closePath(); c2.fill();
-  c2.fillRect(3,9+by,22,4);
+  c2.fillStyle=d; c2.beginPath(); c2.moveTo(14,-2+by); c2.lineTo(22,10+by); c2.lineTo(5,10+by); c2.closePath(); c2.fill(); c2.fillRect(3,9+by,22,4);
   c2.fillStyle='#fff'; c2.fillRect(9,9+by,3,3); c2.fillRect(16,9+by,3,3);
   c2.fillStyle='#60a5fa'; c2.fillRect(10,10+by,2,2); c2.fillRect(17,10+by,2,2);
-  const cx=st==='attack'?24+ax:24, cy=st==='attack'?2+by:4+by;
+  const cx=isAtk?24+ax:24, cy=isAtk?2+by:4+by;
   c2.fillStyle='#a16207'; c2.fillRect(cx,cy,4,32);
-  c2.fillStyle='#7c3aed'; c2.beginPath(); c2.arc(cx+2,cy-2,st==='attack'?6:5,0,Math.PI*2); c2.fill();
-  if(st==='attack'){c2.fillStyle='#fff';c2.beginPath();c2.arc(cx+2,cy-2,3,0,Math.PI*2);c2.fill();}
+  c2.fillStyle='#7c3aed'; c2.beginPath(); c2.arc(cx+2,cy-2,isAtk?6:5,0,Math.PI*2); c2.fill();
+  if(isAtk){c2.fillStyle='#fff';c2.beginPath();c2.arc(cx+2,cy-2,3,0,Math.PI*2);c2.fill();}
 }
-function drawNinja(c2,c,dark,lite,by,ax,st){
-  c2.fillStyle=dark; c2.fillRect(6,30+by,7,14); c2.fillRect(15,30+by,7,14);
-  c2.fillStyle=c;    c2.fillRect(5,14+by,18,17);
-  c2.fillStyle=lite; c2.fillRect(5,27+by,18,4);
+function drawNinja(c2,c,d,l,by,ax,st) {
+  const isAtk = st==='attack';
+  c2.fillStyle=d; c2.fillRect(6,30+by,7,14); c2.fillRect(15,30+by,7,14);
+  c2.fillStyle=c; c2.fillRect(5,14+by,18,17);
+  c2.fillStyle=l; c2.fillRect(5,27+by,18,4);
   c2.fillStyle='#d4a96a'; c2.fillRect(7,6+by,14,12);
-  c2.fillStyle=dark; c2.fillRect(5,2+by,18,5); c2.fillRect(5,11+by,18,6);
-  c2.fillStyle=c;    c2.fillRect(5,6+by,18,6);
+  c2.fillStyle=d; c2.fillRect(5,2+by,18,5); c2.fillRect(5,11+by,18,6);
+  c2.fillStyle=c; c2.fillRect(5,6+by,18,6);
   c2.fillStyle='#fff'; c2.fillRect(7,7+by,4,4); c2.fillRect(17,7+by,4,4);
   c2.fillStyle='#000'; c2.fillRect(8,8+by,2,2); c2.fillRect(18,8+by,2,2);
-  const kx=st==='attack'?22+ax:22;
-  c2.fillStyle='#94a3b8'; c2.fillRect(kx,st==='attack'?20+by:22+by,st==='attack'?12:8,3);
-  c2.fillStyle='#ef4444'; c2.beginPath(); c2.moveTo(kx+(st==='attack'?12:8),st==='attack'?19+by:21+by); c2.lineTo(kx+(st==='attack'?18:14),st==='attack'?21.5+by:23.5+by); c2.lineTo(kx+(st==='attack'?12:8),st==='attack'?24+by:26+by); c2.closePath(); c2.fill();
+  const kx=isAtk?22+ax:22, kw=isAtk?12:8, ky=isAtk?20+by:22+by;
+  c2.fillStyle='#94a3b8'; c2.fillRect(kx,ky,kw,3);
+  c2.fillStyle='#ef4444'; c2.beginPath(); c2.moveTo(kx+kw,ky-1); c2.lineTo(kx+kw+6,ky+1.5); c2.lineTo(kx+kw,ky+4); c2.closePath(); c2.fill();
 }
-function drawDemon(c2,c,dark,lite,by,ax,st){
-  c2.fillStyle=dark; c2.fillRect(6,30+by,7,14); c2.fillRect(15,30+by,7,14);
-  c2.fillStyle=c;    c2.fillRect(4,14+by,20,17);
-  c2.fillStyle=shadeColor(c,-20);
-  c2.beginPath(); c2.moveTo(4,16+by); c2.lineTo(-10,10+by); c2.lineTo(4,24+by); c2.closePath(); c2.fill();
+function drawDemon(c2,c,d,l,by,ax,st) {
+  c2.fillStyle=d; c2.fillRect(6,30+by,7,14); c2.fillRect(15,30+by,7,14);
+  c2.fillStyle=c; c2.fillRect(4,14+by,20,17);
+  const ws=shadeColor(c,-20);
+  c2.fillStyle=ws; c2.beginPath(); c2.moveTo(4,16+by); c2.lineTo(-10,10+by); c2.lineTo(4,24+by); c2.closePath(); c2.fill();
   c2.beginPath(); c2.moveTo(24,16+by); c2.lineTo(38,10+by); c2.lineTo(24,24+by); c2.closePath(); c2.fill();
-  c2.fillStyle=c;    c2.fillRect(6,4+by,16,11);
-  c2.fillStyle=lite; c2.fillRect(7,-2+by,4,8); c2.fillRect(17,-2+by,4,8);
+  c2.fillStyle=c; c2.fillRect(6,4+by,16,11);
+  c2.fillStyle=l; c2.fillRect(7,-2+by,4,8); c2.fillRect(17,-2+by,4,8);
   c2.fillStyle='#ff0000'; c2.beginPath(); c2.arc(10,8+by,3,0,Math.PI*2); c2.fill(); c2.beginPath(); c2.arc(18,8+by,3,0,Math.PI*2); c2.fill();
   c2.fillStyle='#ffff00'; c2.beginPath(); c2.arc(10,8+by,1.5,0,Math.PI*2); c2.fill(); c2.beginPath(); c2.arc(18,8+by,1.5,0,Math.PI*2); c2.fill();
-  if(st==='attack'){c2.fillStyle=lite;c2.fillRect(24+ax,16+by,8,6);c2.fillRect(32+ax,13+by,3,4);c2.fillRect(32+ax,17+by,3,4);c2.fillRect(32+ax,21+by,3,4);}
+  if(st==='attack'){c2.fillStyle=l;c2.fillRect(24+ax,16+by,8,6);c2.fillRect(32+ax,13+by,3,4);c2.fillRect(32+ax,17+by,3,4);c2.fillRect(32+ax,21+by,3,4);}
 }
 
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 // LOBBY
-// ═══════════════════════════════════════════════════════════════
-let myChar  = 'warrior';
-let mySkin  = SKINS[0];
-let myNick  = '';
-let myReady = false;
+// ═══════════════════════════════════════════════════════
+let myChar = 'warrior', mySkin = SKINS[0], myNick = '', myReady = false;
 
 const charSelect = document.getElementById('char-select');
 CHARS.forEach(ch => {
   const wrap = document.createElement('div');
-  wrap.className = `cchar${ch.id === myChar ? ' selected' : ''}`;
+  wrap.className = `cchar${ch.id===myChar?' selected':''}`;
   wrap.dataset.id = ch.id;
   const cv = document.createElement('canvas');
   cv.width = 56; cv.height = 56;
@@ -323,194 +410,159 @@ CHARS.forEach(ch => {
   lbl.textContent = ch.name;
   wrap.appendChild(cv); wrap.appendChild(lbl);
   wrap.addEventListener('click', () => {
-    document.querySelectorAll('.cchar').forEach(el => el.classList.remove('selected'));
-    wrap.classList.add('selected');
-    myChar = ch.id;
-    redrawCharThumbs();
+    document.querySelectorAll('.cchar').forEach(e => e.classList.remove('selected'));
+    wrap.classList.add('selected'); myChar = ch.id; redrawThumbs();
   });
   charSelect.appendChild(wrap);
 });
-
-function redrawCharThumbs() {
-  document.querySelectorAll('.cchar').forEach(wrap => {
-    const cv  = wrap.querySelector('canvas');
-    const cx2 = cv.getContext('2d');
-    cx2.clearRect(0, 0, cv.width, cv.height);
-    const cid = wrap.dataset.id;
-    drawCharacterSprite(cx2, cid, cid === myChar ? mySkin : SKINS[0], 4, 4, 1.8, false, 'idle', 0);
+function redrawThumbs() {
+  document.querySelectorAll('.cchar').forEach(w => {
+    const cv = w.querySelector('canvas');
+    const c2 = cv.getContext('2d');
+    c2.clearRect(0,0,cv.width,cv.height);
+    drawCharacterSprite(c2, w.dataset.id, w.dataset.id===myChar?mySkin:SKINS[0], 4, 4, 1.8, false, 'idle', 0);
   });
 }
-
 const skinSelect = document.getElementById('skin-select');
-SKINS.forEach((sk, i) => {
+SKINS.forEach((sk,i) => {
   const btn = document.createElement('div');
-  btn.className = `cskin${i === 0 ? ' selected' : ''}`;
+  btn.className = `cskin${i===0?' selected':''}`;
   btn.style.background = sk;
   btn.addEventListener('click', () => {
     document.querySelectorAll('.cskin').forEach(b => b.classList.remove('selected'));
-    btn.classList.add('selected');
-    mySkin = sk;
-    redrawCharThumbs();
+    btn.classList.add('selected'); mySkin = sk; redrawThumbs();
   });
   skinSelect.appendChild(btn);
 });
-
 document.getElementById('nick-input').value = localStorage.getItem('duel2d_nick') || '';
 
 document.getElementById('ready-btn').addEventListener('click', () => {
   if (myReady) return;
   const nick = document.getElementById('nick-input').value.trim() || `Player_${PSLOT}`;
   localStorage.setItem('duel2d_nick', nick);
-  myNick  = nick;
-  myReady = true;
+  myNick = nick; myReady = true;
   document.getElementById('ready-btn').textContent = '⏳ Aguardando oponente...';
   document.getElementById('ready-btn').classList.add('waiting');
   document.getElementById('status-msg').textContent = '✅ Pronto! Aguardando oponente...';
-  socket.emit('player_ready', { roomId: ROOM, slot: PSLOT, nick, charId: myChar, skin: mySkin });
+  socket.emit('player_ready', { roomId:ROOM, slot:PSLOT, nick, charId:myChar, skin:mySkin });
 });
 
-// ═══════════════════════════════════════════════════════════════
-// SOCKET.IO
-// ═══════════════════════════════════════════════════════════════
-const socket = io({ reconnectionDelay: 1500, reconnectionAttempts: 15 });
+// ═══════════════════════════════════════════════════════
+// SOCKET
+// ═══════════════════════════════════════════════════════
+const socket = io({ reconnectionDelay:1500, reconnectionAttempts:15 });
 
 socket.on('connect', () => {
   document.getElementById('reconn').style.display = 'none';
   document.getElementById('status-msg').textContent = '✅ Conectado! Configure e clique em Pronto.';
-  socket.emit('join_2d', { roomId: ROOM, slot: PSLOT });
+  socket.emit('join_2d', { roomId:ROOM, slot:PSLOT });
 });
-socket.on('disconnect', () => {
-  document.getElementById('reconn').style.display = 'block';
-});
+socket.on('disconnect', () => { document.getElementById('reconn').style.display = 'block'; });
 socket.on('reconnect', () => {
   document.getElementById('reconn').style.display = 'none';
-  socket.emit('join_2d', { roomId: ROOM, slot: PSLOT });
-  if (myReady) socket.emit('player_ready', { roomId: ROOM, slot: PSLOT, nick: myNick, charId: myChar, skin: mySkin });
+  socket.emit('join_2d', { roomId:ROOM, slot:PSLOT });
+  if (myReady) socket.emit('player_ready', { roomId:ROOM, slot:PSLOT, nick:myNick, charId:myChar, skin:mySkin });
 });
-socket.on('waiting_opponent', () => {
-  document.getElementById('status-msg').textContent = '⏳ Aguardando oponente entrar...';
-});
-socket.on('both_ready', () => {
-  document.getElementById('status-msg').textContent = '🔥 Ambos prontos! Iniciando...';
-});
+socket.on('waiting_opponent', () => { document.getElementById('status-msg').textContent = '⏳ Aguardando oponente...'; });
+socket.on('both_ready',  () => { document.getElementById('status-msg').textContent = '🔥 Ambos prontos! Iniciando...'; });
 socket.on('game_state',  applyGameState);
 socket.on('hit_event',   onHitEvent);
 socket.on('round_end',   handleRoundEnd);
 socket.on('game_over',   handleGameOver);
 socket.on('error_msg',   msg => { document.getElementById('status-msg').textContent = `⚠️ ${msg}`; });
 
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 // ESTADO LOCAL
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 let gameRunning = false;
 let animFrame   = null;
 let localFrame  = 0;
 
+// Estado interpolado localmente
 let gs = {
   p1: { x:150, y:FLOOR_Y, hp:MAX_HP, maxHp:MAX_HP, ult:0, state:'idle', flipped:false, charId:'warrior', skin:SKINS[0], nick:'P1', effects:[], blocking:false, hitFlash:0 },
   p2: { x:620, y:FLOOR_Y, hp:MAX_HP, maxHp:MAX_HP, ult:0, state:'idle', flipped:true,  charId:'ninja',   skin:SKINS[2], nick:'P2', effects:[], blocking:false, hitFlash:0 },
   round:1, timeLeft:ROUND_DUR, phase:'lobby', wins:{p1:0,p2:0},
 };
 
-// Interpolação leve para suavizar movimento
-const LERP = 0.35;
+// Controle de throttle do HUD (DOM é caro — atualiza 10x/s máx)
+let lastHudUpdate = 0;
 
-function applyGameState(serverGs) {
-  if (!serverGs) return;
-
+function applyGameState(srv) {
+  if (!srv) return;
   ['p1','p2'].forEach(slot => {
-    const src = serverGs[slot];
-    if (!src) return;
-    const dst = gs[slot];
-    dst.x       = dst.x + (src.x - dst.x) * LERP;
-    dst.y       = dst.y + (src.y - dst.y) * LERP;
-    dst.hp      = src.hp;
-    dst.ult     = src.ult;
-    dst.state   = src.state;
-    dst.flipped = src.flipped;
-    dst.effects = src.effects || [];
-    dst.blocking= src.blocking || false;
-    if (src.charId) dst.charId = src.charId;
-    if (src.skin)   dst.skin   = src.skin;
-    if (src.nick)   dst.nick   = src.nick;
-    if (!dst.hitFlash) dst.hitFlash = 0;
+    const s = srv[slot]; if (!s) return;
+    const d = gs[slot];
+    // Interpolação de posição (suaviza jitter de rede)
+    d.x = d.x + (s.x - d.x) * 0.4;
+    d.y = d.y + (s.y - d.y) * 0.4;
+    d.hp      = s.hp;
+    d.ult     = s.ult;
+    d.state   = s.state;
+    d.flipped = s.flipped;
+    d.effects = s.effects || [];
+    d.blocking= s.blocking || false;
+    if (s.charId) d.charId = s.charId;
+    if (s.skin)   d.skin   = s.skin;
+    if (s.nick)   d.nick   = s.nick;
+    if (!d.hitFlash) d.hitFlash = 0;
   });
+  gs.round    = srv.round    ?? gs.round;
+  gs.timeLeft = srv.timeLeft ?? gs.timeLeft;
+  gs.phase    = srv.phase    ?? gs.phase;
+  gs.wins     = srv.wins     ?? gs.wins;
 
-  gs.round    = serverGs.round    ?? gs.round;
-  gs.timeLeft = serverGs.timeLeft ?? gs.timeLeft;
-  gs.phase    = serverGs.phase    ?? gs.phase;
-  gs.wins     = serverGs.wins     ?? gs.wins;
+  // Inicia jogo quando servidor confirmar fase 'fight'
+  if (gs.phase === 'fight' && !gameRunning) startGame();
 
-  // FIX: inicia o jogo visual quando o servidor confirmar fase 'fight'
-  if ((gs.phase === 'fight' || gs.phase === 'fight') && !gameRunning) {
-    startGame();
-  }
-
-  updateHUD();
+  // HUD throttlado — não atualiza DOM a cada packet de rede
+  const now = Date.now();
+  if (now - lastHudUpdate > 100) { lastHudUpdate = now; updateHUD(); }
 }
 
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 // CONTROLES TOUCH
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 const joystickZone = document.getElementById('joystick-zone');
 const joystickKnob = document.getElementById('joystick-knob');
-
-let joystickActive = false;
-let joystickId     = null;
-let lastMoveSend   = 0;
-const MOVE_THROTTLE = 40; // ms
+let joystickActive = false, joystickId = null, lastMoveSend = 0;
 
 function sendInput(type, data) {
-  socket.emit('player_input', { roomId: ROOM, slot: PSLOT, type, ...(data||{}) });
+  socket.volatile.emit('player_input', { roomId:ROOM, slot:PSLOT, type, ...(data||{}) });
 }
 
 joystickZone.addEventListener('touchstart', e => {
   e.preventDefault();
   const t = e.changedTouches[0];
-  joystickActive = true;
-  joystickId = t.identifier;
+  joystickActive = true; joystickId = t.identifier;
   updateJoystick(t);
-}, { passive: false });
-
+}, { passive:false });
 document.addEventListener('touchmove', e => {
   if (!joystickActive) return;
-  for (const t of e.changedTouches) {
-    if (t.identifier === joystickId) { updateJoystick(t); break; }
-  }
-}, { passive: false });
-
+  for (const t of e.changedTouches) if (t.identifier===joystickId) { updateJoystick(t); break; }
+}, { passive:false });
 document.addEventListener('touchend', e => {
   for (const t of e.changedTouches) {
-    if (t.identifier === joystickId) {
-      joystickActive = false;
-      joystickId = null;
+    if (t.identifier===joystickId) {
+      joystickActive = false; joystickId = null;
       joystickKnob.style.transform = 'translate(0,0)';
-      sendInput('move', { dx: 0 });
-      break;
+      sendInput('move', { dx:0 }); break;
     }
   }
 });
-
 function updateJoystick(touch) {
   const rect = joystickZone.getBoundingClientRect();
-  const cx   = rect.left + rect.width  / 2;
-  const cy   = rect.top  + rect.height / 2;
-  let   dx   = touch.clientX - cx;
-  let   dy   = touch.clientY - cy;
-  const dist = Math.sqrt(dx*dx + dy*dy);
-  const max  = rect.width / 2 - 8;
-  if (dist > max) { dx = dx/dist*max; dy = dy/dist*max; }
+  let dx = touch.clientX - (rect.left + rect.width/2);
+  let dy = touch.clientY - (rect.top  + rect.height/2);
+  const dist = Math.sqrt(dx*dx+dy*dy), max = rect.width/2 - 8;
+  if (dist > max) { dx=dx/dist*max; dy=dy/dist*max; }
   joystickKnob.style.transform = `translate(${dx}px,${dy}px)`;
   const now = Date.now();
-  if (now - lastMoveSend >= MOVE_THROTTLE) {
-    lastMoveSend = now;
-    sendInput('move', { dx: dx / max });
-  }
+  if (now - lastMoveSend >= 40) { lastMoveSend = now; sendInput('move', { dx: dx/max }); }
 }
 
-document.getElementById('btn-jump').addEventListener('touchstart', e => { e.preventDefault(); sendInput('jump'); }, { passive: false });
+document.getElementById('btn-jump').addEventListener('touchstart', e => { e.preventDefault(); sendInput('jump'); }, { passive:false });
 document.getElementById('btn-jump').addEventListener('mousedown',  e => { e.preventDefault(); sendInput('jump'); });
-
 [
   { id:'btn-light',   type:'attack_light' },
   { id:'btn-heavy',   type:'attack_heavy' },
@@ -519,29 +571,27 @@ document.getElementById('btn-jump').addEventListener('mousedown',  e => { e.prev
   { id:'btn-special', type:'special'      },
 ].forEach(({ id, type }) => {
   const btn = document.getElementById(id);
-  btn.addEventListener('touchstart', e => { e.preventDefault(); sendInput(type); }, { passive: false });
+  btn.addEventListener('touchstart', e => { e.preventDefault(); sendInput(type); }, { passive:false });
   btn.addEventListener('mousedown',  e => { e.preventDefault(); sendInput(type); });
 });
 
-// ═══════════════════════════════════════════════════════════════
-// INICIAR JOGO — FIX: removida referência a #particles inexistente
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+// INICIAR JOGO
+// ═══════════════════════════════════════════════════════
 function startGame() {
-  if (gameRunning) return; // Evita dupla chamada
+  if (gameRunning) return;
   gameRunning = true;
-
-  document.getElementById('gc').style.display      = 'block';
-  document.getElementById('lobby').style.display   = 'none';
-  document.getElementById('hud').style.display     = 'flex';
-  document.getElementById('controls').style.display= 'flex';
-
+  document.getElementById('gc').style.display       = 'block';
+  document.getElementById('lobby').style.display    = 'none';
+  document.getElementById('hud').style.display      = 'flex';
+  document.getElementById('controls').style.display = 'flex';
   updateHUD();
-  gameLoop();
+  requestAnimationFrame(gameLoop);
 }
 
-// ═══════════════════════════════════════════════════════════════
-// GAME LOOP
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+// GAME LOOP — rAF puro, sem setInterval paralelo
+// ═══════════════════════════════════════════════════════
 function gameLoop() {
   if (!gameRunning) return;
   localFrame++;
@@ -549,189 +599,182 @@ function gameLoop() {
   animFrame = requestAnimationFrame(gameLoop);
 }
 
-// ═══════════════════════════════════════════════════════════════
-// RENDER
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+// RENDER — otimizado:
+// • drawImage do bgCanvas pré-renderizado (1 draw call)
+// • gradientes reutilizados do cache
+// • chama toSX/toSY (inline, sem objeto) em vez de toScreen()
+// • FIX: chão em toSY(FLOOR_Y), não toSY(FLOOR_Y+44)
+// ═══════════════════════════════════════════════════════
 function render() {
   const W = canvas.width;
   const H = canvas.height;
 
-  // Fundo
-  const grad = ctx.createLinearGradient(0, 0, 0, H);
-  grad.addColorStop(0,   '#030712');
-  grad.addColorStop(0.5, '#0d0d1a');
-  grad.addColorStop(1,   '#0d1a0d');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, W, H);
+  // ── 1. Fundo estático (1 draw call) ──────────────────
+  ctx.drawImage(bgCanvas, 0, 0);
 
-  // Estrelas estáticas
-  ctx.fillStyle = 'rgba(255,255,255,0.5)';
-  for (let i = 0; i < 25; i++) {
-    const sx = (i * 137.508 * W) % W;
-    const sy = (i * 97.3   * H  / 2) % (H * 0.55);
-    ctx.beginPath();
-    ctx.arc(sx, sy, i % 3 === 0 ? 1.5 : 0.8, 0, Math.PI*2);
-    ctx.fill();
-  }
+  // ── 2. Chamas animadas das tochas (única parte dinâmica do fundo)
+  const flicker = Math.sin(localFrame * 0.18) * 3 * SC.scale;
+  const tx1 = toSX(60),         ty1 = toSY(FLOOR_Y - 30);
+  const tx2 = toSX(ARENA_W-60), ty2 = toSY(FLOOR_Y - 30);
+  drawFlame(tx1, ty1, flicker);
+  drawFlame(tx2, ty2, flicker);
 
-  const sc = toScreen(0, 0);
-  // Tochas
-  drawTorch(ctx, toScreen(60,         FLOOR_Y - 30).x, toScreen(60,         FLOOR_Y - 30).y, sc.scale);
-  drawTorch(ctx, toScreen(ARENA_W-60, FLOOR_Y - 30).x, toScreen(ARENA_W-60, FLOOR_Y - 30).y, sc.scale);
-
-  // Plataforma central
-  const { x:px, y:py, scale:ps } = toScreen(ARENA_W/2 - 60, FLOOR_Y - 8);
-  ctx.fillStyle = '#1e293b'; ctx.fillRect(px, py, 120*ps, 10*ps);
-  ctx.strokeStyle = '#334155'; ctx.lineWidth = 1; ctx.strokeRect(px, py, 120*ps, 10*ps);
-
-  // Personagens
+  // ── 3. Personagens ───────────────────────────────────
   ['p1','p2'].forEach(slot => {
     const p  = gs[slot];
-    const sc = toScreen(p.x - 14, p.y - 44);
-    const sprScale = sc.scale;
+    // FIX: sprite top em (p.x-14, p.y-44) → pés em p.y = FLOOR_Y
+    const sx = toSX(p.x - 14);
+    const sy = toSY(p.y - 44);
+    const ss = SC.scale;
 
-    // Sombra
-    const sh = toScreen(p.x, FLOOR_Y + 44);
+    // Sombra — alinhada ao FLOOR_Y real
+    const shadowX = toSX(p.x);
+    const shadowY = toSY(FLOOR_Y);   // FIX: era FLOOR_Y+44
     ctx.save();
     ctx.globalAlpha = 0.3;
     ctx.fillStyle   = '#000';
     ctx.beginPath();
-    ctx.ellipse(sh.x, sh.y + 2, 18*sc.scale, 5*sc.scale, 0, 0, Math.PI*2);
+    ctx.ellipse(shadowX, shadowY, 18*ss, 5*ss, 0, 0, Math.PI*2);
     ctx.fill();
     ctx.restore();
 
     // Hit flash
     if (p.hitFlash > 0) {
-      ctx.save();
-      ctx.globalAlpha = 0.5;
-      ctx.fillStyle   = '#fff';
-      ctx.fillRect(sc.x - 5*sprScale, sc.y, 38*sprScale, 50*sprScale);
+      ctx.save(); ctx.globalAlpha = 0.5; ctx.fillStyle = '#fff';
+      ctx.fillRect(sx - 5*ss, sy, 38*ss, 50*ss);
       ctx.restore();
       p.hitFlash--;
     }
 
-    drawCharacterSprite(ctx, p.charId, p.skin, sc.x, sc.y, sprScale, p.flipped, p.state, localFrame);
+    drawCharacterSprite(ctx, p.charId, p.skin, sx, sy, ss, p.flipped, p.state, localFrame);
 
-    // Blocking
+    // Escudo
     if (p.blocking) {
-      ctx.save();
-      ctx.globalAlpha = 0.4;
-      ctx.fillStyle   = '#3b82f6';
+      ctx.save(); ctx.globalAlpha = 0.35; ctx.fillStyle = '#3b82f6';
       ctx.beginPath();
-      ctx.ellipse(sc.x + 14*sprScale, sc.y + 22*sprScale, 22*sprScale, 28*sprScale, 0, 0, Math.PI*2);
-      ctx.fill();
-      ctx.restore();
+      ctx.ellipse(sx + 14*ss, sy + 22*ss, 22*ss, 28*ss, 0, 0, Math.PI*2);
+      ctx.fill(); ctx.restore();
     }
 
     // Nick
-    const np = toScreen(p.x, p.y - 56);
     ctx.fillStyle   = '#e2e8f0';
-    ctx.font        = `bold ${Math.floor(11*sc.scale)}px system-ui`;
+    ctx.font        = `bold ${Math.floor(11*ss)}px system-ui`;
     ctx.textAlign   = 'center';
-    ctx.shadowColor = '#000'; ctx.shadowBlur = 4;
-    ctx.fillText(p.nick, np.x, np.y);
+    ctx.shadowColor = '#000'; ctx.shadowBlur = 3;
+    ctx.fillText(p.nick, toSX(p.x), toSY(p.y - 56));
     ctx.shadowBlur  = 0;
   });
 
-  // Chão
-  const fl = toScreen(0, FLOOR_Y + 44);
-  const grd2 = ctx.createLinearGradient(0, fl.y, 0, fl.y + 30*sc.scale);
-  grd2.addColorStop(0, '#1e3a1e');
-  grd2.addColorStop(1, '#0d1a0d');
-  ctx.fillStyle = grd2;
-  ctx.fillRect(0, fl.y, W, H - fl.y);
+  // ── 4. Chão — FIX: toSY(FLOOR_Y), não toSY(FLOOR_Y+44)
+  const fy = toSY(FLOOR_Y);
+  ctx.fillStyle = floorGrad;   // gradiente do cache
+  ctx.fillRect(0, fy, W, H - fy);
   ctx.strokeStyle = '#22c55e44'; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(0, fl.y); ctx.lineTo(W, fl.y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, fy); ctx.lineTo(W, fy); ctx.stroke();
 }
 
-function drawTorch(ctx2, x, y, scale) {
-  ctx2.fillStyle = '#92400e';
-  ctx2.fillRect(x - 3*scale, y, 6*scale, 20*scale);
-  const flicker = Math.sin(localFrame * 0.18) * 3;
-  ctx2.save();
-  ctx2.globalAlpha = 0.9;
-  ctx2.fillStyle   = '#f59e0b';
-  ctx2.beginPath(); ctx2.moveTo(x, y-10*scale); ctx2.lineTo(x-7*scale, y+flicker*scale); ctx2.lineTo(x+7*scale, y+flicker*scale); ctx2.closePath(); ctx2.fill();
-  ctx2.globalAlpha = 0.5;
-  ctx2.fillStyle   = '#fde68a';
-  ctx2.beginPath(); ctx2.moveTo(x, y-14*scale); ctx2.lineTo(x-4*scale, y+flicker*scale); ctx2.lineTo(x+4*scale, y+flicker*scale); ctx2.closePath(); ctx2.fill();
-  const rg = ctx2.createRadialGradient(x, y, 0, x, y, 40*scale);
-  rg.addColorStop(0, 'rgba(245,158,11,0.25)'); rg.addColorStop(1, 'rgba(245,158,11,0)');
-  ctx2.globalAlpha = 0.6; ctx2.fillStyle = rg;
-  ctx2.beginPath(); ctx2.arc(x, y, 40*scale, 0, Math.PI*2); ctx2.fill();
-  ctx2.restore();
+// Chama animada — desenhada por cima do bgCanvas a cada frame
+function drawFlame(x, y, flicker) {
+  ctx.save();
+  ctx.globalAlpha = 0.9;
+  ctx.fillStyle   = '#f59e0b';
+  ctx.beginPath();
+  ctx.moveTo(x, y - 10*SC.scale);
+  ctx.lineTo(x - 7*SC.scale, y + flicker);
+  ctx.lineTo(x + 7*SC.scale, y + flicker);
+  ctx.closePath(); ctx.fill();
+  ctx.globalAlpha = 0.5;
+  ctx.fillStyle   = '#fde68a';
+  ctx.beginPath();
+  ctx.moveTo(x, y - 14*SC.scale);
+  ctx.lineTo(x - 4*SC.scale, y + flicker);
+  ctx.lineTo(x + 4*SC.scale, y + flicker);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
 }
 
-// ═══════════════════════════════════════════════════════════════
-// HUD
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+// HUD — throttlado, atualiza apenas o que mudou
+// ═══════════════════════════════════════════════════════
+let prevHud = {};
 function updateHUD() {
   const p1 = gs.p1, p2 = gs.p2;
-  document.getElementById('hud-p1-name').textContent = p1.nick;
-  document.getElementById('hud-p2-name').textContent = p2.nick;
-  document.getElementById('hud-p1-hp').style.width   = `${(p1.hp / (p1.maxHp||MAX_HP) * 100).toFixed(1)}%`;
-  document.getElementById('hud-p2-hp').style.width   = `${(p2.hp / (p2.maxHp||MAX_HP) * 100).toFixed(1)}%`;
-  document.getElementById('hud-p1-ult').style.width  = `${Math.min(100, p1.ult)}%`;
-  document.getElementById('hud-p2-ult').style.width  = `${Math.min(100, p2.ult)}%`;
-  document.getElementById('hud-p1-vals').textContent = `HP: ${Math.max(0,p1.hp)} | Ult: ${Math.floor(p1.ult)}`;
-  document.getElementById('hud-p2-vals').textContent = `HP: ${Math.max(0,p2.hp)} | Ult: ${Math.floor(p2.ult)}`;
-  document.getElementById('round-badge').textContent = `Round ${gs.round}`;
-  document.getElementById('timer-badge').textContent = `${Math.ceil(gs.timeLeft||0)}`;
+  const p1hp  = `${(p1.hp / (p1.maxHp||MAX_HP) * 100).toFixed(1)}%`;
+  const p2hp  = `${(p2.hp / (p2.maxHp||MAX_HP) * 100).toFixed(1)}%`;
+  const p1ult = `${Math.min(100, p1.ult)}%`;
+  const p2ult = `${Math.min(100, p2.ult)}%`;
+  const timer = `${Math.ceil(gs.timeLeft||0)}`;
+  const ultOp = p1.ult >= 100 ? '1' : '0.4';
+
+  // Só atualiza DOM se valor mudou
+  if (p1hp  !== prevHud.p1hp)  { document.getElementById('hud-p1-hp').style.width  = p1hp;  prevHud.p1hp  = p1hp; }
+  if (p2hp  !== prevHud.p2hp)  { document.getElementById('hud-p2-hp').style.width  = p2hp;  prevHud.p2hp  = p2hp; }
+  if (p1ult !== prevHud.p1ult) { document.getElementById('hud-p1-ult').style.width = p1ult; prevHud.p1ult = p1ult; }
+  if (p2ult !== prevHud.p2ult) { document.getElementById('hud-p2-ult').style.width = p2ult; prevHud.p2ult = p2ult; }
+  if (p1.nick !== prevHud.p1n) { document.getElementById('hud-p1-name').textContent = p1.nick; prevHud.p1n = p1.nick; }
+  if (p2.nick !== prevHud.p2n) { document.getElementById('hud-p2-name').textContent = p2.nick; prevHud.p2n = p2.nick; }
+
+  const p1v = `HP: ${Math.max(0,p1.hp)} | Ult: ${Math.floor(p1.ult)}`;
+  const p2v = `HP: ${Math.max(0,p2.hp)} | Ult: ${Math.floor(p2.ult)}`;
+  if (p1v !== prevHud.p1v) { document.getElementById('hud-p1-vals').textContent = p1v; prevHud.p1v = p1v; }
+  if (p2v !== prevHud.p2v) { document.getElementById('hud-p2-vals').textContent = p2v; prevHud.p2v = p2v; }
+  if (timer !== prevHud.timer) { document.getElementById('timer-badge').textContent = timer; prevHud.timer = timer; }
+
+  const rb = `Round ${gs.round}`;
+  if (rb !== prevHud.rb) { document.getElementById('round-badge').textContent = rb; prevHud.rb = rb; }
+  if (ultOp !== prevHud.ultOp) { document.getElementById('btn-ult').style.opacity = ultOp; prevHud.ultOp = ultOp; }
+
+  // Efeitos (raro — sem throttle extra)
   const mySlot = gs[PSLOT];
-  document.getElementById('btn-ult').style.opacity = mySlot && mySlot.ult >= 100 ? '1' : '0.4';
-  const efxBar = document.getElementById('effect-bar');
-  efxBar.innerHTML = (mySlot && mySlot.effects && mySlot.effects.length)
+  const efxStr = mySlot?.effects?.length
     ? mySlot.effects.map(e => `<div class="efx-badge">${e}</div>`).join('')
     : '';
+  if (efxStr !== prevHud.efx) { document.getElementById('effect-bar').innerHTML = efxStr; prevHud.efx = efxStr; }
 }
 
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 // HIT TEXT
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 function spawnHitText(dmg, arenaX, arenaY, isCrit) {
-  const sc  = toScreen(arenaX, arenaY);
   const div = document.createElement('div');
-  div.className  = 'hit-text';
-  div.textContent= isCrit ? `💥${dmg}!` : `-${dmg}`;
-  div.style.cssText = `left:${sc.x}px;top:${sc.y}px;font-size:${isCrit?'18':'14'}px;color:${isCrit?'#f59e0b':'#ef4444'}`;
+  div.className = 'hit-text';
+  div.textContent = isCrit ? `💥${dmg}!` : `-${dmg}`;
+  div.style.cssText = `left:${toSX(arenaX)}px;top:${toSY(arenaY)}px;font-size:${isCrit?'18':'14'}px;color:${isCrit?'#f59e0b':'#ef4444'}`;
   document.getElementById('hit-texts').appendChild(div);
   setTimeout(() => div.remove(), 800);
 }
-
 function onHitEvent(ev) {
   const target = ev.target === 'p1' ? gs.p1 : gs.p2;
   if (target) target.hitFlash = 6;
   spawnHitText(ev.dmg, ev.x, ev.y, ev.isCrit);
 }
 
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 // ROUND END / GAME OVER
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 function handleRoundEnd(data) {
   const ov = document.getElementById('end-overlay');
-  document.getElementById('end-icon').textContent  = data.draw ? '🤝' : data.winner === PSLOT ? '✊' : '💀';
-  document.getElementById('end-title').textContent = data.draw ? 'ROUND EMPATE' : `ROUND ${gs.round} ${data.winner === PSLOT ? '✓' : '✗'}`;
+  document.getElementById('end-icon').textContent  = data.draw ? '🤝' : data.winner===PSLOT ? '✊' : '💀';
+  document.getElementById('end-title').textContent = data.draw ? 'ROUND EMPATE' : `ROUND ${gs.round} ${data.winner===PSLOT?'✓':'✗'}`;
   document.getElementById('end-sub').textContent   = 'Próximo round em 3s...';
   document.getElementById('end-xp').textContent    = '';
   document.getElementById('btn-rematch').style.display = 'none';
   ov.classList.remove('hidden');
   setTimeout(() => ov.classList.add('hidden'), 3000);
 }
-
 function handleGameOver(data) {
   gameRunning = false;
   cancelAnimationFrame(animFrame);
-  const won  = data.winner === PSLOT;
-  const draw = data.draw;
-  const ov   = document.getElementById('end-overlay');
-  document.getElementById('end-icon').textContent  = draw ? '🤝' : won ? '🏆' : '💀';
-  document.getElementById('end-title').textContent = draw ? 'EMPATE!' : won ? 'VITÓRIA!' : 'DERROTA';
-  document.getElementById('end-sub').textContent   = draw ? 'Ambos lutaram com honra!' : won ? `Você derrotou ${gs[ENEMY].nick}!` : `${gs[ENEMY].nick} venceu!`;
-  document.getElementById('end-xp').textContent    = draw ? '+20 XP' : won ? '+100 XP' : '-100 XP';
+  const won = data.winner===PSLOT, draw = data.draw;
+  const ov  = document.getElementById('end-overlay');
+  document.getElementById('end-icon').textContent  = draw?'🤝':won?'🏆':'💀';
+  document.getElementById('end-title').textContent = draw?'EMPATE!':won?'VITÓRIA!':'DERROTA';
+  document.getElementById('end-sub').textContent   = draw?'Ambos lutaram com honra!':won?`Você derrotou ${gs[ENEMY].nick}!`:`${gs[ENEMY].nick} venceu!`;
+  document.getElementById('end-xp').textContent    = draw?'+20 XP':won?'+100 XP':'-100 XP';
   document.getElementById('btn-rematch').style.display = 'block';
   ov.classList.remove('hidden');
 }
-
 document.getElementById('btn-rematch').addEventListener('click', () => location.reload());
 </script>
 </body>
