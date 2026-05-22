@@ -600,8 +600,7 @@ checkOrientation();
 // CANVAS
 // ═══════════════════════════════════════════════════════════════
 const canvas = document.getElementById('gc');
-const ctx = canvas.getContext('2d', { alpha: false });
-ctx.imageSmoothingEnabled = false;
+const ctx    = canvas.getContext('2d');
 
 function resizeCanvas() {
   canvas.width  = window.innerWidth;
@@ -1224,9 +1223,9 @@ function animLobby() {
     var cid = wrap.dataset.id;
     drawCharacterSprite(cx2, cid, cid === myChar ? mySkin : SKINS[0], 6, 4, 1.6, false, 'idle', lobbyFrame);
   });
-  if (document.getElementById("lobby").style.display !== "none") requestAnimationFrame(animLobby);
+  requestAnimationFrame(animLobby);
 }
-if (document.getElementById("lobby").style.display !== "none") requestAnimationFrame(animLobby);
+requestAnimationFrame(animLobby);
 
 var skinSelect = document.getElementById('skin-select');
 SKINS.forEach(function(sk, i) {
@@ -1287,9 +1286,9 @@ socket.on('both_ready', function() {
 socket.on('game_state', applyGameState);
 socket.on('hit_event', function(ev) {
   var target = ev.target === 'p1' ? gs.p1 : gs.p2;
-  target.hitFlash = 3;
+  target.hitFlash = 8;
   spawnHitText(ev.dmg, ev.x, ev.y, ev.isCrit);
-  spawnParticles(ev.x, ev.y, ev.isCrit ? '#f59e0b' : '#ef4444', ev.isCrit ? 4 : 2);
+  spawnParticles(ev.x, ev.y, ev.isCrit ? '#f59e0b' : '#ef4444', ev.isCrit ? 12 : 6);
   playSound(ev.isCrit ? 'hit_crit' : (ev.heavy ? 'hit_heavy' : 'hit_light'));
   if (ev.isCrit) screenFlash('#ff6600', 0.25);
 });
@@ -1338,7 +1337,7 @@ function applyGameState(serverGs) {
     dst.x = dst.x + (src.x - dst.x) * 0.4;
     dst.y = dst.y + (src.y - dst.y) * 0.4;
     if (Math.abs(dst.x - oldX) > 2 && gameRunning) {
-      // addCanvasParticle(oldX, dst.y + 30, dst.skin || '#fff',
+      addCanvasParticle(oldX, dst.y + 30, dst.skin || '#fff',
         (Math.random() - 0.5) * 1.5, Math.random() * 0.5);
     }
     dst.hp       = src.hp;
@@ -1367,7 +1366,7 @@ var joystickActive = false;
 var joystickId     = null;
 var jDir           = { x: 0, y: 0 };
 var lastInputSend  = 0;
-var INPUT_THROTTLE = 80;
+var INPUT_THROTTLE = 40;
 
 function sendInput(type, data) {
   data = data || {};
@@ -1488,16 +1487,7 @@ function showRoundAnnounce(line1, line2) {
 // ═══════════════════════════════════════════════════════════════
 // GAME LOOP
 // ═══════════════════════════════════════════════════════════════
-var lastFrameTime = 0;
-var targetFPS = 30;
-var frameDelay = 1000 / targetFPS;
-function gameLoop(timestamp) {
-  if (!timestamp) timestamp = Date.now();
-  if (timestamp - lastFrameTime < frameDelay) {
-    if (gameRunning) animFrame = requestAnimationFrame(gameLoop);
-    return;
-  }
-  lastFrameTime = timestamp;
+function gameLoop() {
   if (!gameRunning) return;
   localFrame++;
   canvasParticles = canvasParticles.filter(function(p) {
@@ -1517,7 +1507,7 @@ function gameLoop(timestamp) {
 function render() {
   var W = canvas.width;
   var H = canvas.height;
-  ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H);
+  ctx.clearRect(0, 0, W, H);
 
   drawBackground(ctx, W, H);
 
@@ -1525,7 +1515,17 @@ function render() {
   var info  = toScreen(0, 0);
   var scale = info.scale;
 
-  // Partículas de rastro desabilitadas para performance
+  // Partículas de rastro
+  canvasParticles.forEach(function(p) {
+    var sc = toScreen(p.x, p.y);
+    ctx.save();
+    ctx.globalAlpha = p.life * 0.6;
+    ctx.fillStyle   = p.color;
+    ctx.beginPath();
+    ctx.arc(sc.x, sc.y, p.size * scale * p.life, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  });
 
   // Personagens
   ['p1', 'p2'].forEach(function(slot) {
@@ -1626,6 +1626,12 @@ function render() {
   ctx.lineTo(W, fl.y);
   ctx.stroke();
 
+  // Grama decorativa
+  for (var gx = 0; gx < W; gx += 18) {
+    var gh = 4 + (gx * 7 % 5);
+    ctx.fillStyle = '#16a34a55';
+    ctx.fillRect(gx, fl.y - gh, 2, gh);
+  }
 }
 
 function drawBackground(ctx2, W, H) {
@@ -1637,7 +1643,7 @@ function drawBackground(ctx2, W, H) {
   ctx2.fillRect(0, 0, W, H);
 
   // Estrelas cintilantes
-  for (var i = 0; i < 20; i++) {
+  for (var i = 0; i < 70; i++) {
     var sx    = ((i * 137.508 * W / 100) % W);
     var sy    = ((i * 97.3   * H / 100) % (H * 0.55));
     var blink = 0.3 + Math.abs(Math.sin(localFrame * 0.03 + i)) * 0.7;
