@@ -500,15 +500,15 @@
     "lastMinerar": 1779415904064
   },
   "28635268403272@lid": {
-    "xp": 1047,
+    "xp": 1056,
     "level": 6,
     "coins": 308,
     "streak": 1,
     "lastDaily": 1779413628219,
     "lastWeekly": 1778969109674,
-    "lastXP": 1779457759867,
-    "lastActive": 1779457759867,
-    "messages": 305,
+    "lastXP": 1779457903532,
+    "lastActive": 1779457903532,
+    "messages": 306,
     "inventory": {
       "frames": [
         "default"
@@ -529,8 +529,8 @@
       "chatterbox"
     ],
     "stats": {
-      "totalXP": 4066,
-      "totalMessages": 305,
+      "totalXP": 4075,
+      "totalMessages": 306,
       "totalCoins": 14874,
       "minigamesWon": 0,
       "eventsWon": 0,

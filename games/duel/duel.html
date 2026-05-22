@@ -271,8 +271,8 @@ canvas{display:block;touch-action:none}
 </div>
 
 <div id="reconn">🔄 Reconectando...</div>
-<div id="screen-flash"></div>
-<div id="particles"></div>
+<div id="screen-flash" style="display:none"></div>
+<div id="particles" style="display:none"></div>
 
 <!-- LOBBY -->
 <div id="lobby">
@@ -299,7 +299,7 @@ canvas{display:block;touch-action:none}
 </div>
 
 <!-- CANVAS -->
-<canvas id="gc"></canvas>
+<canvas id="gc" style="display:none"></canvas>
 
 <!-- HUD -->
 <div id="hud" style="display:none">
@@ -1456,6 +1456,8 @@ attackBtns.forEach(function(ab) {
 // INICIAR JOGO
 // ═══════════════════════════════════════════════════════════════
 function startGame() {
+  document.getElementById('gc').style.display = 'block';
+  document.getElementById('particles').style.display = 'block';
   document.getElementById('lobby').style.display    = 'none';
   document.getElementById('hud').style.display      = 'flex';
   document.getElementById('controls').style.display = 'flex';
