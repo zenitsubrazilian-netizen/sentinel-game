@@ -461,7 +461,96 @@ function sanitize(room) {
     regenPerRound:      p.regenPerRound      || 0,
     spellPowerBonus:    p.spellPowerBonus    || 0,
     ultimatePowerBonus: p.ultimatePowerBonus || 0,
+  
+  // ═══════════════════════════════════════════════════════════════
+  // DUEL ARENA 2D - eventos para o jogo visual
+  // ═══════════════════════════════════════════════════════════════
+  
+  socket.on('join_2d', ({ roomId, slot }) => {
+    console.log(`[DUEL2D] ${slot} entrou na sala ${roomId}`);
+    socket.join(roomId);
+    socket.duelRoom = roomId;
+    socket.duelSlot = slot;
+    socket.emit('waiting_opponent');
   });
+
+  socket.on('player_ready', ({ roomId, slot, nick, charId, skin }) => {
+    console.log(`[DUEL2D] ${slot} pronto: ${nick} | char:${charId}`);
+    
+    // Verificar quantos sockets estão na sala
+    const socketsInRoom = io.sockets.adapter.rooms.get(roomId);
+    const playerCount = socketsInRoom ? socketsInRoom.size : 0;
+    
+    console.log(`[DUEL2D] Sala ${roomId} tem ${playerCount} jogadores`);
+    
+    if (playerCount >= 2) {
+      console.log(`[DUEL2D] Iniciando jogo na sala ${roomId}`);
+      io.to(roomId).emit('both_ready');
+      
+      // Estado inicial do jogo 2D
+      const gameState = {
+        p1: {
+          x: 150, y: 340, hp: 120, maxHp: 120, ult: 0,
+          state: 'idle', flipped: false,
+          charId: slot === 'p1' ? charId : 'warrior',
+          skin: slot === 'p1' ? skin : '#ef4444',
+          nick: slot === 'p1' ? nick : 'P1',
+          effects: [], blocking: false
+        },
+        p2: {
+          x: 620, y: 340, hp: 120, maxHp: 120, ult: 0,
+          state: 'idle', flipped: true,
+          charId: slot === 'p2' ? charId : 'ninja',
+          skin: slot === 'p2' ? skin : '#3b82f6',
+          nick: slot === 'p2' ? nick : 'P2',
+          effects: [], blocking: false
+        },
+        round: 1,
+        timeLeft: 60,
+        phase: 'fight'
+      };
+      
+      // Enviar estado inicial após delay
+      setTimeout(() => {
+        io.to(roomId).emit('game_state', gameState);
+        
+        // Iniciar loop básico de atualização
+        const gameInterval = setInterval(() => {
+          gameState.timeLeft -= 0.1;
+          
+          if (gameState.timeLeft <= 0) {
+            clearInterval(gameInterval);
+            io.to(roomId).emit('round_end', { 
+              winner: 'p1', 
+              draw: false,
+              wins: { p1: 1, p2: 0 },
+              round: 1
+            });
+          }
+          
+          io.to(roomId).emit('game_state', gameState);
+        }, 100);
+        
+        // Limpar interval após 5 minutos
+        setTimeout(() => clearInterval(gameInterval), 5 * 60 * 1000);
+        
+      }, 1500);
+    }
+  });
+
+  socket.on('player_input', ({ roomId, slot, type, dx }) => {
+    console.log(`[DUEL2D] Input ${type} de ${slot} na sala ${roomId}`);
+    
+    // Retransmitir para outros jogadores na sala
+    socket.to(roomId).emit('opponent_input', {
+      slot, type, dx, roomId
+    });
+    
+    // Aqui poderia ter lógica mais avançada de processamento
+    // Por enquanto só retransmite para sincronização
+  });
+
+});
   return {
     phase:   room.phase,
     round:   room.round,
