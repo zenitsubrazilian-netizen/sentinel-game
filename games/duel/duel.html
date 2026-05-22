@@ -2,465 +2,1136 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<title>⚔️ Duel Arena</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>⚔️ Duel Arena 2D</title>
 <style>
-:root{--bg:#0d0d1a;--card:#151528;--b:#252548;--pur:#7c3aed;--grn:#10b981;--blu:#3b82f6;--gold:#f59e0b;--red:#ef4444;--txt:#e2e8f0;--mut:#64748b}
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--txt);font-family:system-ui,sans-serif;display:flex;justify-content:center;min-height:100dvh}
-.wrap{width:100%;max-width:440px;padding:8px;display:flex;flex-direction:column;gap:7px}
-.card{background:var(--card);border:1px solid var(--b);border-radius:14px;padding:12px}
-.card.enemy{border-color:#3d1515}.card.me{border-color:#152840}
-.row{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:700;margin-bottom:8px}
-.sub{font-size:11px;color:var(--gold)}
-.blbl{display:flex;justify-content:space-between;font-size:11px;color:var(--mut);margin-bottom:2px}
-.bar{height:10px;background:#1e1e38;border-radius:5px;margin-bottom:5px;overflow:hidden}
-.bar.sm{height:6px}
-.bfill{height:100%;border-radius:5px;transition:width .4s}
-.hp  {background:linear-gradient(90deg,#7f1d1d,#ef4444)}
-.mana{background:linear-gradient(90deg,#1e3a8a,#3b82f6)}
-.ult {background:linear-gradient(90deg,#78350f,#f59e0b)}
-.srow{display:flex;gap:10px;font-size:11px;color:var(--mut);flex-wrap:wrap;margin-top:3px}
-.efx{font-size:10px;color:var(--gold);min-height:13px;margin-top:3px}
-.log{background:#080814;border:1px solid var(--b);border-radius:12px;padding:10px;max-height:150px;overflow-y:auto;font-size:11px;line-height:1.7}
-.log p{padding:0}.log .sep{color:var(--mut);font-size:10px;border-top:1px solid var(--b);margin:4px 0;padding-top:4px}
-.log::-webkit-scrollbar{width:3px}.log::-webkit-scrollbar-thumb{background:var(--b);border-radius:2px}
-.grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
-.btn{background:var(--card);border:1px solid var(--b);border-radius:10px;color:var(--txt);padding:10px 4px;font-size:11px;font-weight:600;cursor:pointer;text-align:center;transition:transform .1s;line-height:1.4;-webkit-tap-highlight-color:transparent}
-.btn:active{transform:scale(.94);background:#1e1e38}
-.btn.sp{border-color:var(--pur);color:#c4b5fd}.btn.ul{border-color:var(--gold);color:var(--gold)}
-.btn.w3{grid-column:span 3}
-.btn:disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
-.wait{text-align:center;padding:12px;color:var(--mut);font-size:13px;background:var(--card);border-radius:10px;border:1px dashed var(--b)}
-.hidden{display:none!important}
-.ov{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:50;display:flex;align-items:flex-end;justify-content:center}
-.sp-panel{background:var(--card);border-radius:20px 20px 0 0;border:1px solid var(--b);padding:16px;width:100%;max-width:440px;max-height:70vh;overflow-y:auto}
-.sp-title{font-size:14px;font-weight:700;text-align:center;color:#c4b5fd;margin-bottom:12px}
-.sp-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
-.scard{background:#1a1a34;border:1px solid var(--b);border-radius:10px;padding:10px;cursor:pointer;transition:opacity .15s}
-.scard:active{opacity:.6}.scard.dis{opacity:.35;pointer-events:none}
-.si{font-size:20px}.sn{font-size:11px;font-weight:700;margin:3px 0 1px}.sd{font-size:10px;color:var(--mut)}.sc{font-size:10px;color:#60a5fa}
-.cd-badge{color:#f87171;font-weight:700}
-.cls-btn{display:block;width:100%;margin-top:10px;padding:10px;background:#252548;border:none;border-radius:10px;color:var(--txt);font-size:13px;cursor:pointer}
-.end{text-align:center;padding:30px 16px;margin-top:10px}
-.end-e{font-size:50px;margin-bottom:8px}.end-t{font-size:22px;font-weight:800;margin-bottom:10px}
-.end-s{font-size:13px;color:var(--mut);line-height:2}
-#reconn{position:fixed;top:0;left:0;right:0;background:#7c3aed;color:#fff;text-align:center;padding:8px;font-size:12px;font-weight:700;z-index:100;display:none}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:system-ui,sans-serif}
+canvas{display:block;touch-action:none}
+
+/* ── LOBBY ── */
+#lobby{
+  position:fixed;inset:0;background:linear-gradient(135deg,#0d0d1a 0%,#1a0d2e 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+  z-index:100;padding:20px;
+}
+#lobby h1{font-size:clamp(20px,5vw,32px);color:#f59e0b;text-shadow:0 0 20px #f59e0b88;letter-spacing:2px}
+#lobby h2{font-size:clamp(12px,3vw,16px);color:#7c3aed;margin-top:-10px}
+
+.lcard{background:#151528;border:1px solid #252548;border-radius:14px;padding:16px;width:100%;max-width:480px}
+.lcard h3{font-size:13px;color:#94a3b8;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px}
+
+#nick-input{
+  width:100%;background:#0d0d1a;border:1px solid #7c3aed;border-radius:8px;
+  color:#e2e8f0;padding:10px 14px;font-size:15px;outline:none;
+}
+#nick-input:focus{border-color:#f59e0b}
+
+/* ── CHAR SELECT ── */
+.chars{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.cchar{
+  background:#0d0d1a;border:2px solid #252548;border-radius:10px;
+  padding:8px 4px;cursor:pointer;text-align:center;transition:all .15s;
+}
+.cchar:active{transform:scale(.93)}
+.cchar.selected{border-color:#f59e0b;background:#1a1500}
+.cchar canvas{width:100%;height:auto;display:block;margin:0 auto}
+.cchar span{font-size:10px;color:#94a3b8;display:block;margin-top:4px}
+
+/* ── SKINS ── */
+.skins{display:flex;gap:8px;flex-wrap:wrap}
+.cskin{
+  width:36px;height:36px;border-radius:50%;border:2px solid #252548;
+  cursor:pointer;transition:transform .15s;
+}
+.cskin:active{transform:scale(.88)}
+.cskin.selected{border-color:#f59e0b;transform:scale(1.15)}
+
+/* ── READY BTN ── */
+#ready-btn{
+  width:100%;max-width:480px;padding:14px;
+  background:linear-gradient(135deg,#7c3aed,#4f46e5);
+  border:none;border-radius:12px;color:#fff;font-size:16px;font-weight:700;
+  cursor:pointer;letter-spacing:1px;transition:opacity .15s;
+}
+#ready-btn:active{opacity:.8}
+#ready-btn.waiting{background:#1e3a8a;animation:pulse 1.2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+
+#status-msg{font-size:12px;color:#64748b;text-align:center}
+
+/* ── HUD ── */
+#hud{
+  position:fixed;top:0;left:0;right:0;
+  display:flex;justify-content:space-between;align-items:flex-start;
+  padding:6px 10px;z-index:10;pointer-events:none;
+}
+.hud-side{display:flex;flex-direction:column;gap:3px;min-width:120px}
+.hud-side.right{align-items:flex-end}
+.hud-name{font-size:11px;font-weight:700;color:#e2e8f0;text-shadow:1px 1px 2px #000}
+.hud-bar-bg{height:10px;background:#1e1e38;border-radius:5px;overflow:hidden;width:130px}
+.hud-bar-fill{height:100%;border-radius:5px;transition:width .2s}
+.hp-fill{background:linear-gradient(90deg,#7f1d1d,#ef4444)}
+.ult-fill{background:linear-gradient(90deg,#78350f,#f59e0b)}
+.hud-vals{font-size:9px;color:#94a3b8}
+#round-badge{
+  background:#7c3aed;padding:3px 12px;border-radius:20px;
+  font-size:11px;font-weight:700;color:#fff;align-self:center;
+}
+#timer-badge{
+  font-size:13px;font-weight:700;color:#f59e0b;text-align:center;
+  text-shadow:0 0 8px #f59e0b;
+}
+
+/* ── CONTROLES ── */
+#controls{
+  position:fixed;bottom:0;left:0;right:0;
+  display:flex;justify-content:space-between;align-items:flex-end;
+  padding:8px 10px 12px;z-index:10;pointer-events:none;
+}
+#left-controls,#right-controls{pointer-events:all;display:flex;gap:8px;align-items:flex-end}
+
+/* Joystick */
+#joystick-zone{
+  width:110px;height:110px;border-radius:50%;
+  background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.12);
+  position:relative;display:flex;align-items:center;justify-content:center;
+}
+#joystick-knob{
+  width:44px;height:44px;border-radius:50%;
+  background:rgba(124,58,237,.7);border:2px solid #7c3aed;
+  position:absolute;transition:transform .05s;pointer-events:none;
+}
+#btn-jump{
+  width:54px;height:54px;border-radius:50%;
+  background:rgba(16,185,129,.25);border:2px solid #10b981;
+  color:#10b981;font-size:20px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;
+}
+
+/* Botões de ataque */
+.abtn{
+  width:58px;height:58px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;cursor:pointer;border:2px solid;
+  flex-direction:column;line-height:1.2;text-align:center;
+}
+.abtn:active{transform:scale(.88);opacity:.7}
+#btn-light {background:rgba(239,68,68,.2); border-color:#ef4444;color:#ef4444}
+#btn-heavy {background:rgba(245,158,11,.2);border-color:#f59e0b;color:#f59e0b}
+#btn-block {background:rgba(59,130,246,.2);border-color:#3b82f6;color:#3b82f6}
+#btn-ult   {background:rgba(168,85,247,.2);border-color:#a855f7;color:#a855f7}
+#btn-special{background:rgba(20,184,166,.2);border-color:#14b8a6;color:#14b8a6;width:46px;height:46px;font-size:10px}
+
+/* ── OVERLAY FIM ── */
+#end-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.82);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:200;gap:12px;
+}
+#end-overlay.hidden{display:none}
+#end-icon{font-size:56px}
+#end-title{font-size:28px;font-weight:800;color:#f59e0b;text-shadow:0 0 20px #f59e0b}
+#end-sub{font-size:14px;color:#94a3b8}
+#end-xp{font-size:16px;font-weight:700;color:#10b981}
+#btn-rematch{
+  padding:12px 32px;background:#7c3aed;border:none;border-radius:12px;
+  color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px;
+}
+#btn-rematch:active{opacity:.7}
+
+/* ── COMBO HIT TEXT ── */
+#hit-texts{position:fixed;inset:0;pointer-events:none;z-index:15;overflow:hidden}
+.hit-text{
+  position:absolute;font-weight:800;pointer-events:none;
+  animation:hitFloat .7s ease-out forwards;
+  text-shadow:2px 2px 4px #000;
+}
+@keyframes hitFloat{
+  0%  {opacity:1;transform:translateY(0) scale(1)}
+  100%{opacity:0;transform:translateY(-60px) scale(1.3)}
+}
+
+/* ── EFEITOS DE STATUS ── */
+#effect-bar{
+  position:fixed;top:52px;left:50%;transform:translateX(-50%);
+  display:flex;gap:8px;z-index:10;pointer-events:none;
+}
+.efx-badge{
+  background:#151528;border:1px solid #252548;border-radius:20px;
+  padding:2px 8px;font-size:10px;color:#f59e0b;
+}
+
+/* ── RECONECT ── */
+#reconn{
+  position:fixed;top:0;left:0;right:0;background:#7c3aed;
+  color:#fff;text-align:center;padding:6px;font-size:11px;font-weight:700;
+  z-index:300;display:none;
+}
+
+/* LANDSCAPE LOCK hint */
+#rotate-hint{
+  position:fixed;inset:0;background:#000;z-index:400;
+  display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+  color:#fff;font-size:14px;text-align:center;padding:20px;
+}
+#rotate-hint span{font-size:48px}
 </style>
 </head>
 <body>
 
-<div id="reconn">🔄 Reconectando...</div>
-
-<audio id="snd-click" src="https://www.myinstants.com/media/sounds/minecraft-click-cropped.mp3" preload="auto"></audio>
-<audio id="snd-bg"    src="https://www.myinstants.com/media/sounds/doors-elevator-music.mp3"    preload="auto" loop></audio>
-<audio id="snd-win"   src="https://www.myinstants.com/media/sounds/end-brawl-stars-win.mp3"     preload="auto"></audio>
-<audio id="snd-lose"  src="https://www.myinstants.com/media/sounds/faith-mortis.mp3"             preload="auto"></audio>
-
-<div class="wrap">
-
-  <div id="loading" style="margin-top:40vh;text-align:center">
-    <div style="font-size:30px">⚔️</div>
-    <div id="loading-msg" style="margin-top:10px;color:var(--mut)">Conectando...</div>
-  </div>
-
-  <div id="battle" class="hidden">
-    <div class="card" style="flex-direction:row;display:flex;justify-content:space-between;align-items:center;padding:8px 12px">
-      <span style="font-size:13px;font-weight:700">⚔️ DUEL</span>
-      <span id="rbadge" style="background:var(--pur);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">Round 1</span>
-      <span id="rid" style="font-size:10px;opacity:.35"></span>
-    </div>
-
-    <div class="card enemy">
-      <div class="row"><span id="ename">🤖 Sentinel</span><span class="sub" id="eready"></span></div>
-      <div class="blbl"><span>❤️ HP</span><span id="ehp">120/120</span></div>
-      <div class="bar"><div id="ehpb" class="bfill hp" style="width:100%"></div></div>
-      <div class="blbl"><span>🔵 Mana</span><span id="emana">60/60</span></div>
-      <div class="bar"><div id="emanab" class="bfill mana" style="width:100%"></div></div>
-      <div class="srow"><span id="een">⚡ 50</span><span id="epot">🧪 2</span><span id="eult">✨ 0/100</span></div>
-      <div class="efx" id="eefx"></div>
-    </div>
-
-    <div class="log" id="log"><p style="color:var(--mut);text-align:center">⚔️ A batalha começa!</p></div>
-
-    <div class="card me">
-      <div class="row"><span id="myname">👤 Você</span><span class="sub" id="myready"></span></div>
-      <div class="blbl"><span>❤️ HP</span><span id="myhp">120/120</span></div>
-      <div class="bar"><div id="myhpb" class="bfill hp" style="width:100%"></div></div>
-      <div class="blbl"><span>🔵 Mana</span><span id="mymana">60/60</span></div>
-      <div class="bar"><div id="mymanab" class="bfill mana" style="width:100%"></div></div>
-      <div class="blbl"><span>✨ Ultimate</span><span id="myulttxt">0/100</span></div>
-      <div class="bar sm"><div id="myultb" class="bfill ult" style="width:0%"></div></div>
-      <div class="srow"><span id="myen">⚡ 50</span><span id="mypot">🧪 2</span></div>
-      <div class="efx" id="myefx"></div>
-    </div>
-
-    <div id="agrid" class="grid">
-      <button class="btn" onclick="act('ataque leve')">⚔️ Leve<br><small>8-15</small></button>
-      <button class="btn" id="btn-pesado" onclick="act('ataque pesado')">💢 Pesado<br><small>20-32 -15⚡</small></button>
-      <button class="btn" onclick="act('defesa')">🛡️ Defesa<br><small>-50% dano</small></button>
-      <button class="btn" onclick="act('esquiva')">💨 Esquiva<br><small>40% evitar</small></button>
-      <button class="btn" id="btn-contra" onclick="act('contra-ataque')">↩️ Contra<br><small>-20⚡</small></button>
-      <button class="btn" id="btn-break" onclick="act('break guard')">🔨 Break<br><small>-25⚡</small></button>
-      <button class="btn" onclick="act('focus')">🧘 Focus<br><small>+mana ⚡</small></button>
-      <button class="btn" id="btn-pocao" onclick="act('usar item')">🧪 Poção<br><small>+30-45 HP</small></button>
-      <button class="btn ul" id="btn-ult" onclick="act('ultimate')">✨ ULTIMATE<br><small>45-65 dano</small></button>
-      <button class="btn sp w3" onclick="showSp()">🔮 Magia — escolher feitiço</button>
-    </div>
-    <div id="waitmsg" class="wait hidden">⏳ Aguardando oponente...</div>
-  </div>
-
-  <div id="endscreen" class="hidden">
-    <div class="end">
-      <div class="end-e" id="end-e">🏆</div>
-      <div class="end-t" id="end-t">Vitória!</div>
-      <div class="end-s" id="end-s"></div>
-    </div>
-    <div class="log" id="end-log" style="max-height:300px"></div>
-  </div>
-
+<div id="rotate-hint">
+  <span>📱</span>
+  <p>Gire o dispositivo para o modo <strong>paisagem</strong> para jogar!</p>
 </div>
 
-<div id="spov" class="ov hidden">
-  <div class="sp-panel">
-    <div class="sp-title">🔮 Escolher Magia</div>
-    <div class="sp-grid" id="spgrid"></div>
-    <button class="cls-btn" onclick="hideSp()">✖ Fechar</button>
+<div id="reconn">🔄 Reconectando...</div>
+
+<!-- ══════════════════════════════════════
+     LOBBY
+═══════════════════════════════════════ -->
+<div id="lobby">
+  <h1>⚔️ DUEL ARENA</h1>
+  <h2>2D FIGHTER</h2>
+
+  <div class="lcard">
+    <h3>👤 Seu Nickname</h3>
+    <input id="nick-input" type="text" maxlength="16" placeholder="Digite seu nome..." autocomplete="off">
   </div>
+
+  <div class="lcard">
+    <h3>🥷 Escolha seu Personagem</h3>
+    <div class="chars" id="char-select"></div>
+  </div>
+
+  <div class="lcard" id="skin-card">
+    <h3>🎨 Cor / Skin</h3>
+    <div class="skins" id="skin-select"></div>
+  </div>
+
+  <button id="ready-btn">⚔️ PRONTO PARA DUELAR</button>
+  <div id="status-msg">Aguardando conexão...</div>
+</div>
+
+<!-- ══════════════════════════════════════
+     GAME CANVAS
+═══════════════════════════════════════ -->
+<canvas id="gc"></canvas>
+
+<!-- ══════════════════════════════════════
+     HUD
+═══════════════════════════════════════ -->
+<div id="hud" style="display:none">
+  <div class="hud-side left">
+    <div class="hud-name" id="hud-p1-name">P1</div>
+    <div class="hud-bar-bg"><div class="hud-bar-fill hp-fill" id="hud-p1-hp" style="width:100%"></div></div>
+    <div class="hud-bar-bg"><div class="hud-bar-fill ult-fill" id="hud-p1-ult" style="width:0%"></div></div>
+    <div class="hud-vals" id="hud-p1-vals">HP: 120 | Ult: 0</div>
+  </div>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+    <div id="round-badge">Round 1</div>
+    <div id="timer-badge">60</div>
+  </div>
+  <div class="hud-side right">
+    <div class="hud-name" id="hud-p2-name">P2</div>
+    <div class="hud-bar-bg" style="transform:scaleX(-1)"><div class="hud-bar-fill hp-fill" id="hud-p2-hp" style="width:100%"></div></div>
+    <div class="hud-bar-bg" style="transform:scaleX(-1)"><div class="hud-bar-fill ult-fill" id="hud-p2-ult" style="width:0%"></div></div>
+    <div class="hud-vals" id="hud-p2-vals">HP: 120 | Ult: 0</div>
+  </div>
+</div>
+
+<div id="effect-bar"></div>
+
+<!-- ══════════════════════════════════════
+     CONTROLES
+═══════════════════════════════════════ -->
+<div id="controls" style="display:none">
+  <div id="left-controls">
+    <div id="joystick-zone">
+      <div id="joystick-knob"></div>
+    </div>
+    <button id="btn-jump">↑</button>
+  </div>
+  <div id="right-controls">
+    <button class="abtn" id="btn-special">✦<br>ESP</button>
+    <button class="abtn" id="btn-block">🛡<br>DEF</button>
+    <button class="abtn" id="btn-heavy">💢<br>FOR</button>
+    <button class="abtn" id="btn-light">⚔<br>LVE</button>
+    <button class="abtn" id="btn-ult">✨<br>ULT</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     HIT TEXTS
+═══════════════════════════════════════ -->
+<div id="hit-texts"></div>
+
+<!-- ══════════════════════════════════════
+     END OVERLAY
+═══════════════════════════════════════ -->
+<div id="end-overlay" class="hidden">
+  <div id="end-icon">🏆</div>
+  <div id="end-title">VITÓRIA!</div>
+  <div id="end-sub"></div>
+  <div id="end-xp"></div>
+  <button id="btn-rematch">🔄 Jogar Novamente</button>
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
-// ═══════════════════════════════════════════════════════════
-// SISTEMA DE ÁUDIO
-// ─────────────────────────────────────────────────────────
-// Navegadores bloqueiam autoplay sem gesto do usuário.
-// Estratégia:
-//   • click/win/lose → sempre disparados por interação, sem problema.
-//   • bg → marcado como "pendente" se o play() for rejeitado,
-//     e retomado automaticamente no primeiro clique do usuário.
-// ═══════════════════════════════════════════════════════════
+'use strict';
+// ═══════════════════════════════════════════════════════════════
+// CONSTANTES
+// ═══════════════════════════════════════════════════════════════
+const ARENA_W   = 800;
+const ARENA_H   = 450;
+const FLOOR_Y   = 340;
+const GRAV      = 0.55;
+const JUMP_VEL  = -13;
+const MOVE_SPD  = 4.2;
+const MAX_HP    = 120;
+const ROUND_DUR = 60; // segundos
 
-const Audio = (() => {
-  const _click = document.getElementById('snd-click');
-  const _bg    = document.getElementById('snd-bg');
-  const _win   = document.getElementById('snd-win');
-  const _lose  = document.getElementById('snd-lose');
+const CHARS = [
+  { id:'warrior', name:'Guerreiro', emoji:'⚔️' },
+  { id:'mage',    name:'Mago',      emoji:'🧙' },
+  { id:'ninja',   name:'Ninja',     emoji:'🥷' },
+  { id:'demon',   name:'Demônio',   emoji:'👹' },
+];
 
-  if (_bg)    _bg.volume    = 0.35;
-  if (_win)   _win.volume   = 0.80;
-  if (_lose)  _lose.volume  = 0.80;
-  if (_click) _click.volume = 0.55;
+const SKINS = [
+  '#ef4444','#f97316','#eab308','#22c55e',
+  '#3b82f6','#8b5cf6','#ec4899','#e2e8f0',
+];
 
-  let _bgPlaying = false; // música está tocando agora
-  let _bgWanted  = false; // música deveria tocar (aguarda gesto)
-  let _endPlayed = false; // som de fim já tocou
+// ═══════════════════════════════════════════════════════════════
+// URL PARAMS
+// ═══════════════════════════════════════════════════════════════
+const params  = new URLSearchParams(location.search);
+const ROOM    = params.get('room');
+const PSLOT   = params.get('player'); // 'p1' | 'p2'
+const ENEMY   = PSLOT === 'p1' ? 'p2' : 'p1';
 
-  function _play(el) {
-    if (!el) return Promise.resolve();
-    return el.play().catch(() => {});
-  }
-
-  function _stop(el) {
-    if (!el) return;
-    el.pause();
-    el.currentTime = 0;
-  }
-
-  return {
-    // ── Toca o clique (sempre ativado por gesto — sem restrição)
-    click() {
-      if (!_click) return;
-      _click.currentTime = 0;
-      _play(_click);
-    },
-
-    // ── Solicita início da música de fundo.
-    //    Se o navegador rejeitar (autoplay), marca como pendente
-    //    e o primeiro clique do usuário a retoma via tryResumeBg().
-    startBg() {
-      if (_bgPlaying || !_bg) return;
-      _bgWanted = true;
-      _bg.currentTime = 0;
-      _play(_bg).then(() => {
-        _bgPlaying = true;
-      }).catch(() => {
-        // Bloqueado — será retomado em tryResumeBg()
-      });
-    },
-
-    // ── Chamado em cada interação do usuário.
-    //    Se a música estava pendente, tenta iniciar agora.
-    tryResumeBg() {
-      if (!_bgWanted || _bgPlaying || !_bg) return;
-      _play(_bg).then(() => {
-        _bgPlaying = true;
-      }).catch(() => {});
-    },
-
-    // ── Para a música imediatamente
-    stopBg() {
-      _bgWanted  = false;
-      _bgPlaying = false;
-      _stop(_bg);
-    },
-
-    // ── Fim de partida: para música e toca fanfarra (uma única vez)
-    playEnd(won) {
-      if (_endPlayed) return;
-      _endPlayed = true;
-      this.stopBg();
-      _play(won ? _win : _lose);
-    },
-
-    // ── Empate: apenas para a música
-    playDraw() {
-      if (_endPlayed) return;
-      _endPlayed = true;
-      this.stopBg();
-    },
-  };
-})();
-
-// ═══════════════════════════════════════════════════════════
-// DELEGAÇÃO DE CLIQUE
-// ─────────────────────────────────────────────────────────
-// 1. Tenta retomar a música de fundo (se estava pendente).
-// 2. Toca o clique em qualquer botão interativo.
-// ═══════════════════════════════════════════════════════════
-
-document.addEventListener('click', e => {
-  // Retoma bg se estava aguardando gesto
-  Audio.tryResumeBg();
-
-  // Som de clique nos botões
-  const btn = e.target.closest('.btn, .scard, .cls-btn');
-  if (btn && !btn.disabled) Audio.click();
-}, true);
-
-// ═══════════════════════════════════════════════════════════
-// DADOS DOS FEITIÇOS
-// ═══════════════════════════════════════════════════════════
-
-const SP_DATA = {
-  bola_de_fogo:  { name:'Bola de Fogo',   icon:'🔥', cost:25, desc:'20-30 dano + queimadura' },
-  raio:          { name:'Raio',            icon:'⚡', cost:30, desc:'25-40 dano + stun'       },
-  gelo:          { name:'Tempestade Gelo', icon:'🧊', cost:20, desc:'15-22 dano + congela'    },
-  veneno:        { name:'Veneno',          icon:'☠️', cost:15, desc:'8-12 dano + veneno 3r'   },
-  cura:          { name:'Cura Divina',     icon:'💚', cost:20, desc:'Cura 30-45 HP'           },
-  escudo_magico: { name:'Escudo Mágico',   icon:'🛡️', cost:18, desc:'-70% dano 2r'            },
-  furia:         { name:'Fúria',           icon:'😤', cost:20, desc:'+10 dano 2r'             },
-  fraqueza:      { name:'Fraqueza',        icon:'💫', cost:15, desc:'Inimigo -8 dano'          },
-  silencio:      { name:'Silêncio',        icon:'🔇', cost:20, desc:'Bloqueia magias 2r'       },
-  correntes:     { name:'Correntes',       icon:'⛓️', cost:25, desc:'5-10 dano + bloqueia esquiva' },
-};
-
-// ═══════════════════════════════════════════════════════════
-// PARÂMETROS DA URL
-// ═══════════════════════════════════════════════════════════
-
-const params = new URLSearchParams(location.search);
-const ROOM   = params.get('room');
-const PLAYER = params.get('player');
-const ENEMY  = PLAYER === 'p1' ? 'p2' : 'p1';
-
-if (!ROOM || !['p1','p2'].includes(PLAYER)) {
-  document.getElementById('loading').innerHTML =
-    '<p style="color:red;padding:20px">⚠️ Link inválido. Use o link enviado pelo bot no PV.</p>';
-  throw new Error('invalid link');
+if (!ROOM || !['p1','p2'].includes(PSLOT)) {
+  document.body.innerHTML = '<p style="color:red;padding:30px;font-size:16px">⚠️ Link inválido.</p>';
+  throw new Error('bad link');
 }
 
-// ═══════════════════════════════════════════════════════════
-// SOCKET.IO
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// ORIENTAÇÃO
+// ═══════════════════════════════════════════════════════════════
+function checkOrientation() {
+  const hint = document.getElementById('rotate-hint');
+  if (window.innerWidth < window.innerHeight) {
+    hint.style.display = 'flex';
+  } else {
+    hint.style.display = 'none';
+  }
+}
+window.addEventListener('resize', checkOrientation);
+window.addEventListener('orientationchange', checkOrientation);
+checkOrientation();
 
-const socket = io("https://sentinel-game-3.onrender.com", {
-  reconnectionDelay: 1500,
-  reconnectionAttempts: 10,
+// ═══════════════════════════════════════════════════════════════
+// CANVAS SETUP
+// ═══════════════════════════════════════════════════════════════
+const canvas = document.getElementById('gc');
+const ctx    = canvas.getContext('2d');
+
+function resizeCanvas() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// Coordenadas de arena → canvas
+function toScreen(ax, ay) {
+  const scaleX = canvas.width  / ARENA_W;
+  const scaleY = canvas.height / ARENA_H;
+  const scale  = Math.min(scaleX, scaleY);
+  const offX   = (canvas.width  - ARENA_W * scale) / 2;
+  const offY   = (canvas.height - ARENA_H * scale) / 2;
+  return { x: offX + ax * scale, y: offY + ay * scale, scale };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SPRITES — pixel art desenhada em canvas offline
+// ═══════════════════════════════════════════════════════════════
+function drawCharacterSprite(ctx2, charId, skinColor, x, y, scale, flipped, state, frame) {
+  ctx2.save();
+  if (flipped) {
+    ctx2.translate(x + 24 * scale, y);
+    ctx2.scale(-1, 1);
+    x = 0;
+  } else {
+    ctx2.translate(x, y);
+  }
+  ctx2.scale(scale, scale);
+
+  const c    = skinColor || '#ef4444';
+  const dark = shadeColor(c, -40);
+  const lite = shadeColor(c, +50);
+
+  // Animação frame
+  const bobY = (state === 'walk') ? Math.sin(frame * 0.4) * 2 : 0;
+  const atkShake = (state === 'attack') ? Math.sin(frame * 1.2) * 3 : 0;
+
+  switch(charId) {
+    case 'warrior': drawWarrior(ctx2, c, dark, lite, bobY, atkShake, state); break;
+    case 'mage':    drawMage(ctx2,    c, dark, lite, bobY, atkShake, state); break;
+    case 'ninja':   drawNinja(ctx2,   c, dark, lite, bobY, atkShake, state); break;
+    case 'demon':   drawDemon(ctx2,   c, dark, lite, bobY, atkShake, state); break;
+    default:        drawWarrior(ctx2, c, dark, lite, bobY, atkShake, state);
+  }
+
+  ctx2.restore();
+}
+
+function shadeColor(hex, amt) {
+  try {
+    let r = parseInt(hex.slice(1,3),16);
+    let g = parseInt(hex.slice(3,5),16);
+    let b = parseInt(hex.slice(5,7),16);
+    r = Math.max(0,Math.min(255,r+amt));
+    g = Math.max(0,Math.min(255,g+amt));
+    b = Math.max(0,Math.min(255,b+amt));
+    return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
+  } catch(e){ return hex; }
+}
+
+// ─── GUERREIRO ────────────────────────────────────────────────
+function drawWarrior(ctx2, c, dark, lite, bobY, atkX, state) {
+  const by = bobY;
+  // Pernas
+  ctx2.fillStyle = dark;
+  if(state==='walk'){
+    ctx2.fillRect(6,  30+by, 7, 14); // perna esq
+    ctx2.fillRect(15, 30+by, 7, 14); // perna dir
+  } else {
+    ctx2.fillRect(6,  30+by, 7, 14);
+    ctx2.fillRect(15, 30+by, 7, 14);
+  }
+  // Corpo / armadura
+  ctx2.fillStyle = c;
+  ctx2.fillRect(4, 16+by, 20, 16);
+  // Placa do peito
+  ctx2.fillStyle = lite;
+  ctx2.fillRect(7, 18+by, 14, 10);
+  // Cabeça + elmo
+  ctx2.fillStyle = '#d4a96a';
+  ctx2.fillRect(7, 4+by, 14, 12);
+  ctx2.fillStyle = c;
+  ctx2.fillRect(5, 2+by, 18, 7); // elmo
+  ctx2.fillRect(5, 7+by, 3, 5);  // viseira esq
+  ctx2.fillRect(20,7+by, 3, 5);  // viseira dir
+  // Olhos
+  ctx2.fillStyle = '#fff';
+  ctx2.fillRect(8,  5+by, 3, 3);
+  ctx2.fillRect(15, 5+by, 3, 3);
+  ctx2.fillStyle = '#000';
+  ctx2.fillRect(9,  6+by, 2, 2);
+  ctx2.fillRect(16, 6+by, 2, 2);
+  // Espada
+  if(state==='attack'){
+    ctx2.fillStyle = '#94a3b8';
+    ctx2.fillRect(22+atkX, 14+by, 3, 20);
+    ctx2.fillStyle = '#f59e0b';
+    ctx2.fillRect(19+atkX, 22+by, 9, 3);
+  } else {
+    ctx2.fillStyle = '#94a3b8';
+    ctx2.fillRect(22, 18+by, 3, 16);
+    ctx2.fillStyle = '#f59e0b';
+    ctx2.fillRect(19, 24+by, 9, 3);
+  }
+  // Escudo
+  ctx2.fillStyle = dark;
+  ctx2.fillRect(-4, 16+by, 6, 12);
+  ctx2.fillStyle = lite;
+  ctx2.fillRect(-3, 18+by, 4, 8);
+}
+
+// ─── MAGO ─────────────────────────────────────────────────────
+function drawMage(ctx2, c, dark, lite, bobY, atkX, state) {
+  const by = bobY;
+  // Robe
+  ctx2.fillStyle = c;
+  ctx2.beginPath();
+  ctx2.moveTo(4, 16+by); ctx2.lineTo(24, 16+by);
+  ctx2.lineTo(26, 44+by); ctx2.lineTo(2, 44+by);
+  ctx2.closePath(); ctx2.fill();
+  // Detalhe robe
+  ctx2.fillStyle = lite;
+  ctx2.fillRect(10, 17+by, 8, 14);
+  // Cabeça
+  ctx2.fillStyle = '#d4a96a';
+  ctx2.fillRect(7, 6+by, 14, 11);
+  // Chapéu
+  ctx2.fillStyle = dark;
+  ctx2.beginPath();
+  ctx2.moveTo(14, -2+by); ctx2.lineTo(22, 10+by); ctx2.lineTo(5, 10+by);
+  ctx2.closePath(); ctx2.fill();
+  ctx2.fillStyle = dark;
+  ctx2.fillRect(3, 9+by, 22, 4);
+  // Olhos
+  ctx2.fillStyle = '#fff';
+  ctx2.fillRect(9,  9+by, 3, 3);
+  ctx2.fillRect(16, 9+by, 3, 3);
+  ctx2.fillStyle = '#60a5fa';
+  ctx2.fillRect(10, 10+by, 2, 2);
+  ctx2.fillRect(17, 10+by, 2, 2);
+  // Cajado
+  if(state==='attack'){
+    ctx2.fillStyle = '#a16207';
+    ctx2.fillRect(24+atkX, 2+by, 4, 34);
+    ctx2.fillStyle = '#7c3aed';
+    ctx2.beginPath();
+    ctx2.arc(26+atkX, 0+by, 6, 0, Math.PI*2);
+    ctx2.fill();
+    ctx2.fillStyle = '#fff';
+    ctx2.beginPath();
+    ctx2.arc(26+atkX, 0+by, 3, 0, Math.PI*2);
+    ctx2.fill();
+  } else {
+    ctx2.fillStyle = '#a16207';
+    ctx2.fillRect(24, 4+by, 4, 32);
+    ctx2.fillStyle = '#7c3aed';
+    ctx2.beginPath();
+    ctx2.arc(26, 2+by, 5, 0, Math.PI*2);
+    ctx2.fill();
+  }
+}
+
+// ─── NINJA ────────────────────────────────────────────────────
+function drawNinja(ctx2, c, dark, lite, bobY, atkX, state) {
+  const by = bobY;
+  // Pernas
+  ctx2.fillStyle = dark;
+  ctx2.fillRect(6,  30+by, 7, 14);
+  ctx2.fillRect(15, 30+by, 7, 14);
+  // Corpo
+  ctx2.fillStyle = c;
+  ctx2.fillRect(5, 14+by, 18, 17);
+  // Cintura / faixa
+  ctx2.fillStyle = lite;
+  ctx2.fillRect(5, 27+by, 18, 4);
+  // Cabeça
+  ctx2.fillStyle = '#d4a96a';
+  ctx2.fillRect(7, 6+by, 14, 12);
+  // Máscara
+  ctx2.fillStyle = dark;
+  ctx2.fillRect(5, 2+by, 18, 5);  // topo
+  ctx2.fillRect(5, 11+by, 18, 6); // boca
+  // Olhos (faixa)
+  ctx2.fillStyle = c;
+  ctx2.fillRect(5, 6+by, 18, 6);
+  ctx2.fillStyle = '#fff';
+  ctx2.fillRect(7,  7+by, 4, 4);
+  ctx2.fillRect(17, 7+by, 4, 4);
+  ctx2.fillStyle = '#000';
+  ctx2.fillRect(8,  8+by, 2, 2);
+  ctx2.fillRect(18, 8+by, 2, 2);
+  // Kunai / braço
+  if(state==='attack'){
+    ctx2.fillStyle = '#94a3b8';
+    ctx2.fillRect(22+atkX, 20+by, 12, 3);
+    ctx2.fillStyle = '#ef4444';
+    ctx2.beginPath();
+    ctx2.moveTo(34+atkX, 19+by);
+    ctx2.lineTo(40+atkX, 21.5+by);
+    ctx2.lineTo(34+atkX, 24+by);
+    ctx2.closePath(); ctx2.fill();
+  } else {
+    ctx2.fillStyle = '#94a3b8';
+    ctx2.fillRect(22, 22+by, 8, 3);
+    ctx2.fillStyle = '#ef4444';
+    ctx2.beginPath();
+    ctx2.moveTo(30, 21+by);
+    ctx2.lineTo(36, 23.5+by);
+    ctx2.lineTo(30, 26+by);
+    ctx2.closePath(); ctx2.fill();
+  }
+}
+
+// ─── DEMÔNIO ──────────────────────────────────────────────────
+function drawDemon(ctx2, c, dark, lite, bobY, atkX, state) {
+  const by = bobY;
+  // Cauda
+  ctx2.fillStyle = dark;
+  ctx2.beginPath();
+  ctx2.moveTo(4, 32+by); ctx2.quadraticCurveTo(-6, 38+by, -2, 44+by);
+  ctx2.lineWidth=3; ctx2.strokeStyle=dark; ctx2.stroke();
+  // Pernas
+  ctx2.fillStyle = dark;
+  ctx2.fillRect(6,  30+by, 7, 14);
+  ctx2.fillRect(15, 30+by, 7, 14);
+  // Corpo
+  ctx2.fillStyle = c;
+  ctx2.fillRect(4, 14+by, 20, 17);
+  // Asas
+  ctx2.fillStyle = shadeColor(c, -20);
+  ctx2.beginPath();
+  ctx2.moveTo(4, 16+by); ctx2.lineTo(-10, 10+by); ctx2.lineTo(4, 24+by);
+  ctx2.closePath(); ctx2.fill();
+  ctx2.beginPath();
+  ctx2.moveTo(24, 16+by); ctx2.lineTo(38, 10+by); ctx2.lineTo(24, 24+by);
+  ctx2.closePath(); ctx2.fill();
+  // Cabeça
+  ctx2.fillStyle = c;
+  ctx2.fillRect(6, 4+by, 16, 11);
+  // Chifres
+  ctx2.fillStyle = lite;
+  ctx2.fillRect(7,  -2+by, 4, 8);
+  ctx2.fillRect(17, -2+by, 4, 8);
+  // Olhos vermelhos
+  ctx2.fillStyle = '#ff0000';
+  ctx2.beginPath();
+  ctx2.arc(10, 8+by, 3, 0, Math.PI*2); ctx2.fill();
+  ctx2.beginPath();
+  ctx2.arc(18, 8+by, 3, 0, Math.PI*2); ctx2.fill();
+  ctx2.fillStyle = '#ffff00';
+  ctx2.beginPath();
+  ctx2.arc(10, 8+by, 1.5, 0, Math.PI*2); ctx2.fill();
+  ctx2.beginPath();
+  ctx2.arc(18, 8+by, 1.5, 0, Math.PI*2); ctx2.fill();
+  // Garra
+  if(state==='attack'){
+    ctx2.fillStyle = lite;
+    ctx2.fillRect(24+atkX, 16+by, 8, 6);
+    ctx2.fillRect(32+atkX, 13+by, 3, 4);
+    ctx2.fillRect(32+atkX, 17+by, 3, 4);
+    ctx2.fillRect(32+atkX, 21+by, 3, 4);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LOBBY
+// ═══════════════════════════════════════════════════════════════
+let myChar    = 'warrior';
+let mySkin    = SKINS[0];
+let myNick    = '';
+let myReady   = false;
+
+// Renderiza miniaturas dos personagens
+const charSelect = document.getElementById('char-select');
+CHARS.forEach(ch => {
+  const wrap = document.createElement('div');
+  wrap.className = `cchar${ch.id === myChar ? ' selected' : ''}`;
+  wrap.dataset.id = ch.id;
+
+  const cv = document.createElement('canvas');
+  cv.width = 56; cv.height = 56;
+  const cx2 = cv.getContext('2d');
+  drawCharacterSprite(cx2, ch.id, SKINS[0], 4, 4, 1.8, false, 'idle', 0);
+
+  const lbl = document.createElement('span');
+  lbl.textContent = ch.name;
+
+  wrap.appendChild(cv);
+  wrap.appendChild(lbl);
+  wrap.addEventListener('click', () => {
+    document.querySelectorAll('.cchar').forEach(el => el.classList.remove('selected'));
+    wrap.classList.add('selected');
+    myChar = ch.id;
+    redrawCharThumbs();
+  });
+  charSelect.appendChild(wrap);
 });
 
-let state     = null;
-let sent      = false;
-let bgStarted = false; // startBg() chamado no máximo uma vez
+function redrawCharThumbs() {
+  document.querySelectorAll('.cchar').forEach(wrap => {
+    const cv  = wrap.querySelector('canvas');
+    const cx2 = cv.getContext('2d');
+    cx2.clearRect(0, 0, cv.width, cv.height);
+    const cid = wrap.dataset.id;
+    drawCharacterSprite(cx2, cid, cid === myChar ? mySkin : SKINS[0], 4, 4, 1.8, false, 'idle', 0);
+  });
+}
+
+// Skins (cores)
+const skinSelect = document.getElementById('skin-select');
+SKINS.forEach((sk, i) => {
+  const btn = document.createElement('div');
+  btn.className = `cskin${i === 0 ? ' selected' : ''}`;
+  btn.style.background = sk;
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.cskin').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    mySkin = sk;
+    redrawCharThumbs();
+  });
+  skinSelect.appendChild(btn);
+});
+
+// Nick padrão
+const savedNick = localStorage.getItem('duel2d_nick') || '';
+document.getElementById('nick-input').value = savedNick;
+
+document.getElementById('ready-btn').addEventListener('click', () => {
+  if (myReady) return;
+  const nick = document.getElementById('nick-input').value.trim() || `Player_${PSLOT}`;
+  localStorage.setItem('duel2d_nick', nick);
+  myNick  = nick;
+  myReady = true;
+  document.getElementById('ready-btn').textContent = '⏳ Aguardando oponente...';
+  document.getElementById('ready-btn').classList.add('waiting');
+  socket.emit('player_ready', {
+    roomId: ROOM,
+    slot:   PSLOT,
+    nick,
+    charId: myChar,
+    skin:   mySkin,
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// SOCKET.IO
+// ═══════════════════════════════════════════════════════════════
+const socket = io({ reconnectionDelay: 1500, reconnectionAttempts: 15 });
 
 socket.on('connect', () => {
   document.getElementById('reconn').style.display = 'none';
-  socket.emit('join', { roomId: ROOM, player: PLAYER });
+  document.getElementById('status-msg').textContent = '✅ Conectado! Configure e clique em Pronto.';
+  socket.emit('join_2d', { roomId: ROOM, slot: PSLOT });
 });
 socket.on('disconnect', () => {
   document.getElementById('reconn').style.display = 'block';
 });
 socket.on('reconnect', () => {
   document.getElementById('reconn').style.display = 'none';
-  socket.emit('join', { roomId: ROOM, player: PLAYER });
-});
-socket.on('reconnect_failed', () => {
-  document.getElementById('reconn').textContent = '❌ Falha. Recarregue a página.';
-});
-socket.on('state', s => { state = s; render(); });
-socket.on('error', msg => {
-  const msgEl = document.getElementById('loading-msg');
-  msgEl.textContent = `⚠️ ${msg}`;
-  msgEl.style.color = '#ef4444';
+  socket.emit('join_2d', { roomId: ROOM, slot: PSLOT });
+  if (myReady) {
+    socket.emit('player_ready', { roomId: ROOM, slot: PSLOT, nick: myNick, charId: myChar, skin: mySkin });
+  }
 });
 
-// ═══════════════════════════════════════════════════════════
-// HELPERS
-// ═══════════════════════════════════════════════════════════
+socket.on('waiting_opponent', () => {
+  document.getElementById('status-msg').textContent = '⏳ Aguardando oponente entrar...';
+});
 
-const el  = id => document.getElementById(id);
-const esc = s  => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-const pct = (v, m) => (Math.max(0, v) / Math.max(1, m) * 100).toFixed(1) + '%';
+socket.on('both_ready', () => {
+  document.getElementById('status-msg').textContent = '🔥 Ambos prontos! Iniciando...';
+  setTimeout(() => startGame(), 600);
+});
 
-// ═══════════════════════════════════════════════════════════
+socket.on('game_state', (gs) => {
+  applyGameState(gs);
+});
+
+socket.on('hit_event', (ev) => {
+  spawnHitText(ev.dmg, ev.x, ev.y, ev.isCrit);
+});
+
+socket.on('round_end', (data) => {
+  handleRoundEnd(data);
+});
+
+socket.on('game_over', (data) => {
+  handleGameOver(data);
+});
+
+socket.on('error_msg', (msg) => {
+  document.getElementById('status-msg').textContent = `⚠️ ${msg}`;
+});
+
+// ═══════════════════════════════════════════════════════════════
+// ESTADO DO JOGO LOCAL
+// ═══════════════════════════════════════════════════════════════
+let gameRunning = false;
+let animFrame   = null;
+let localFrame  = 0;
+
+// Estado espelhado do servidor
+let gs = {
+  p1: { x: 150, y: FLOOR_Y, hp: MAX_HP, maxHp: MAX_HP, ult: 0, state: 'idle', flipped: false, charId: 'warrior', skin: SKINS[0], nick: 'P1', effects: [], blocking: false },
+  p2: { x: 620, y: FLOOR_Y, hp: MAX_HP, maxHp: MAX_HP, ult: 0, state: 'idle', flipped: true,  charId: 'ninja',   skin: SKINS[2], nick: 'P2', effects: [], blocking: false },
+  round:   1,
+  timeLeft: ROUND_DUR,
+  phase:   'fight',
+};
+
+// Interpolação suave de posições
+let renderState = JSON.parse(JSON.stringify(gs));
+
+function applyGameState(serverGs) {
+  // Atualiza com interpolação leve
+  ['p1','p2'].forEach(slot => {
+    if (!serverGs[slot]) return;
+    const src = serverGs[slot];
+    const dst = gs[slot];
+    // Interpola posição
+    dst.x      = dst.x + (src.x - dst.x) * 0.35;
+    dst.y      = dst.y + (src.y - dst.y) * 0.35;
+    dst.hp     = src.hp;
+    dst.ult    = src.ult;
+    dst.state  = src.state;
+    dst.flipped= src.flipped;
+    dst.effects= src.effects || [];
+    dst.blocking = src.blocking || false;
+    if (src.charId) dst.charId = src.charId;
+    if (src.skin)   dst.skin   = src.skin;
+    if (src.nick)   dst.nick   = src.nick;
+  });
+  gs.round    = serverGs.round    || gs.round;
+  gs.timeLeft = serverGs.timeLeft ?? gs.timeLeft;
+  gs.phase    = serverGs.phase    || gs.phase;
+  updateHUD();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CONTROLES TOUCH
+// ═══════════════════════════════════════════════════════════════
+const joystickZone = document.getElementById('joystick-zone');
+const joystickKnob = document.getElementById('joystick-knob');
+const jzRect = () => joystickZone.getBoundingClientRect();
+
+let joystickActive = false;
+let joystickId     = null;
+let jDir = { x: 0, y: 0 };
+
+// Throttle de envio de input (evita flood)
+let lastInputSend = 0;
+const INPUT_THROTTLE = 50; // ms
+
+function sendInput(type, data = {}) {
+  const now = Date.now();
+  if (now - lastInputSend < INPUT_THROTTLE && type === 'move') return;
+  lastInputSend = now;
+  socket.emit('player_input', { roomId: ROOM, slot: PSLOT, type, ...data });
+}
+
+// Joystick
+joystickZone.addEventListener('touchstart', e => {
+  e.preventDefault();
+  const t = e.changedTouches[0];
+  joystickActive = true;
+  joystickId = t.identifier;
+  updateJoystick(t);
+}, { passive: false });
+
+document.addEventListener('touchmove', e => {
+  if (!joystickActive) return;
+  for (const t of e.changedTouches) {
+    if (t.identifier === joystickId) { updateJoystick(t); break; }
+  }
+}, { passive: false });
+
+document.addEventListener('touchend', e => {
+  for (const t of e.changedTouches) {
+    if (t.identifier === joystickId) {
+      joystickActive = false;
+      joystickId = null;
+      jDir = { x: 0, y: 0 };
+      joystickKnob.style.transform = 'translate(0,0)';
+      sendInput('move', { dx: 0 });
+      break;
+    }
+  }
+});
+
+function updateJoystick(touch) {
+  const rect  = jzRect();
+  const cx    = rect.left + rect.width  / 2;
+  const cy    = rect.top  + rect.height / 2;
+  let   dx    = touch.clientX - cx;
+  let   dy    = touch.clientY - cy;
+  const dist  = Math.sqrt(dx*dx + dy*dy);
+  const max   = rect.width / 2 - 8;
+  if (dist > max) { dx = dx/dist*max; dy = dy/dist*max; }
+  joystickKnob.style.transform = `translate(${dx}px,${dy}px)`;
+  jDir.x = dx / max;
+  jDir.y = dy / max;
+  sendInput('move', { dx: jDir.x });
+}
+
+// Botão jump
+document.getElementById('btn-jump').addEventListener('touchstart', e => {
+  e.preventDefault();
+  sendInput('jump');
+}, { passive: false });
+
+// Botões de ataque
+const attackBtns = [
+  { id: 'btn-light',   type: 'attack_light'   },
+  { id: 'btn-heavy',   type: 'attack_heavy'   },
+  { id: 'btn-block',   type: 'block'          },
+  { id: 'btn-ult',     type: 'ultimate'       },
+  { id: 'btn-special', type: 'special'        },
+];
+attackBtns.forEach(({ id, type }) => {
+  const btn = document.getElementById(id);
+  btn.addEventListener('touchstart', e => {
+    e.preventDefault();
+    sendInput(type);
+  }, { passive: false });
+  // Mouse fallback (desktop testing)
+  btn.addEventListener('mousedown', e => { e.preventDefault(); sendInput(type); });
+});
+document.getElementById('btn-jump').addEventListener('mousedown', e => { e.preventDefault(); sendInput('jump'); });
+
+// ═══════════════════════════════════════════════════════════════
+// INICIAR JOGO
+// ═══════════════════════════════════════════════════════════════
+function startGame() {
+  document.getElementById('lobby').style.display    = 'none';
+  document.getElementById('hud').style.display      = 'flex';
+  document.getElementById('controls').style.display = 'flex';
+  gameRunning = true;
+  updateHUD();
+  gameLoop();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// GAME LOOP — renderização local suave
+// ═══════════════════════════════════════════════════════════════
+function gameLoop() {
+  if (!gameRunning) return;
+  localFrame++;
+  render();
+  animFrame = requestAnimationFrame(gameLoop);
+}
+
+// ═══════════════════════════════════════════════════════════════
 // RENDER
-// ═══════════════════════════════════════════════════════════
-
+// ═══════════════════════════════════════════════════════════════
 function render() {
-  if (!state) return;
-  el('loading').classList.add('hidden');
+  const W = canvas.width;
+  const H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
 
-  if (state.phase === 'ended') { renderEnd(); return; }
+  // ── Fundo
+  drawBackground(ctx, W, H);
 
-  // Solicita início da música — se o gesto já ocorreu toca imediatamente,
-  // senão fica pendente e tryResumeBg() a retoma no próximo clique.
-  if (!bgStarted) {
-    bgStarted = true;
-    Audio.startBg();
-  }
+  // ── Chão
+  const fl = toScreen(0, FLOOR_Y + 44);
+  const tr = toScreen(ARENA_W, FLOOR_Y + 44);
+  const { scale } = toScreen(0, 0);
 
-  el('battle').classList.remove('hidden');
-  el('rbadge').textContent = `Round ${state.round}`;
-  el('rid').textContent    = ROOM;
+  // ── Personagens
+  ['p1','p2'].forEach(slot => {
+    const p = gs[slot];
+    const sc = toScreen(p.x - 14, p.y - 44);
+    const sprScale = sc.scale * 1.0;
 
-  const me = state[PLAYER];
-  const en = state[ENEMY];
-  if (!me || !en) return;
+    // Sombra
+    const shadowPos = toScreen(p.x, FLOOR_Y + 44);
+    ctx.save();
+    ctx.globalAlpha = 0.3;
+    ctx.fillStyle   = '#000';
+    ctx.beginPath();
+    ctx.ellipse(shadowPos.x, shadowPos.y + 2, 18 * sc.scale, 5 * sc.scale, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
 
-  el('ename').textContent  = en.isBot ? '🤖 Sentinel' : '👤 Oponente';
-  el('ehp').textContent    = `${Math.max(0, en.hp)}/${en.maxHp}`;
-  el('ehpb').style.width   = pct(en.hp, en.maxHp);
-  el('emana').textContent  = `${Math.max(0, en.mana)}/${en.maxMana}`;
-  el('emanab').style.width = pct(en.mana, en.maxMana);
-  el('een').textContent    = `⚡ ${Math.max(0, en.energy || 0)}`;
-  el('epot').textContent   = `🧪 ${en.potions || 0}`;
-  el('eult').textContent   = `✨ ${Math.min(100, en.ultimate || 0)}/100`;
-  el('eefx').textContent   = (en.effects || []).map(e => e.type).join(' ') || '';
-  el('eready').textContent = en.action ? '✅' : '';
+    // Efeito de hit flash
+    if (p.hitFlash > 0) {
+      ctx.save();
+      ctx.globalAlpha = 0.5;
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(sc.x - 5*sprScale, sc.y, 38*sprScale, 50*sprScale);
+      ctx.restore();
+      p.hitFlash--;
+    }
 
-  el('myhp').textContent     = `${Math.max(0, me.hp)}/${me.maxHp}`;
-  el('myhpb').style.width    = pct(me.hp, me.maxHp);
-  el('mymana').textContent   = `${Math.max(0, me.mana)}/${me.maxMana}`;
-  el('mymanab').style.width  = pct(me.mana, me.maxMana);
-  el('myulttxt').textContent = `${Math.min(100, me.ultimate || 0)}/100`;
-  el('myultb').style.width   = Math.min(100, me.ultimate || 0) + '%';
-  el('myen').textContent     = `⚡ ${Math.max(0, me.energy || 0)}`;
-  el('mypot').textContent    = `🧪 ${me.potions || 0}`;
-  el('myefx').textContent    = (me.effects || []).map(e => e.type).join(' ') || '';
-  el('myready').textContent  = me.action ? '✅ aguardando...' : '';
+    // Sprite
+    drawCharacterSprite(ctx, p.charId, p.skin, sc.x, sc.y, sprScale, p.flipped, p.state, localFrame);
 
-  el('btn-pesado').disabled = (me.energy || 0) < 15;
-  el('btn-contra').disabled = (me.energy || 0) < 20;
-  el('btn-break').disabled  = (me.energy || 0) < 25;
-  el('btn-pocao').disabled  = me.potions <= 0;
-  el('btn-ult').disabled    = (me.ultimate || 0) < 100;
+    // Blocking shield visual
+    if (p.blocking) {
+      ctx.save();
+      ctx.globalAlpha = 0.4;
+      ctx.fillStyle   = '#3b82f6';
+      ctx.beginPath();
+      ctx.ellipse(sc.x + 14*sprScale, sc.y + 22*sprScale, 22*sprScale, 28*sprScale, 0, 0, Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+    }
 
-  const acted = me.action !== null && me.action !== undefined;
-  el('agrid').classList.toggle('hidden',  acted);
-  el('waitmsg').classList.toggle('hidden', !acted);
-  if (!acted) sent = false;
+    // Nick acima do personagem
+    const nickPos = toScreen(p.x, p.y - 56);
+    ctx.fillStyle   = '#e2e8f0';
+    ctx.font        = `bold ${Math.floor(11*sc.scale)}px system-ui`;
+    ctx.textAlign   = 'center';
+    ctx.shadowColor = '#000'; ctx.shadowBlur = 4;
+    ctx.fillText(p.nick, nickPos.x, nickPos.y);
+    ctx.shadowBlur = 0;
+  });
 
-  const logEl = el('log');
-  if (state.log?.length) {
-    logEl.innerHTML = state.log.slice(-50)
-      .map(l => l.startsWith('━')
-        ? `<p class="sep">${esc(l)}</p>`
-        : `<p>${esc(l)}</p>`)
-      .join('');
-    logEl.scrollTop = logEl.scrollHeight;
-  }
+  // ── Chão (frente)
+  const grd = ctx.createLinearGradient(0, fl.y, 0, fl.y + 30 * scale);
+  grd.addColorStop(0, '#1e3a1e');
+  grd.addColorStop(1, '#0d1a0d');
+  ctx.fillStyle = grd;
+  ctx.fillRect(0, fl.y, W, H - fl.y);
+
+  // Linha do chão brilhante
+  ctx.strokeStyle = '#22c55e44';
+  ctx.lineWidth   = 2;
+  ctx.beginPath(); ctx.moveTo(0, fl.y); ctx.lineTo(W, fl.y); ctx.stroke();
 }
 
-// ═══════════════════════════════════════════════════════════
-// TELA FINAL
-// ═══════════════════════════════════════════════════════════
+function drawBackground(ctx2, W, H) {
+  // Gradiente de céu noturno
+  const grad = ctx2.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0,   '#030712');
+  grad.addColorStop(0.5, '#0d0d1a');
+  grad.addColorStop(1,   '#0d1a0d');
+  ctx2.fillStyle = grad;
+  ctx2.fillRect(0, 0, W, H);
 
-function renderEnd() {
-  el('battle').classList.add('hidden');
-  el('endscreen').classList.remove('hidden');
+  // Estrelas (estáticas baseadas em seed)
+  ctx2.fillStyle = 'rgba(255,255,255,0.5)';
+  for (let i = 0; i < 60; i++) {
+    const sx = ((i * 137.508 * W) % W);
+    const sy = ((i * 97.3 * H / 2) % (H * 0.55));
+    const sr = (i % 3 === 0) ? 1.5 : 0.8;
+    ctx2.beginPath();
+    ctx2.arc(sx, sy, sr, 0, Math.PI*2);
+    ctx2.fill();
+  }
 
-  const me = state[PLAYER];
+  // Tocha esquerda
+  const { x: tx1, y: ty1 } = toScreen(60, FLOOR_Y - 30);
+  drawTorch(ctx2, tx1, ty1, toScreen(0,0).scale);
+  // Tocha direita
+  const { x: tx2, y: ty2 } = toScreen(ARENA_W - 60, FLOOR_Y - 30);
+  drawTorch(ctx2, tx2, ty2, toScreen(0,0).scale);
 
-  if (state.winner === 'draw') {
-    el('end-e').textContent = '🤝';
-    el('end-t').textContent = 'EMPATE!';
-    el('end-s').textContent = 'Ambos caíram ao mesmo tempo!';
-    Audio.playDraw();
-  } else if (state.winner === PLAYER) {
-    el('end-e').textContent = '🏆';
-    el('end-t').textContent = 'VITÓRIA!';
-    el('end-s').innerHTML   =
-      `❤️ HP restante: ${Math.max(0, me?.hp || 0)}/${me?.maxHp || 120}<br>🎉 +100 XP`;
-    Audio.playEnd(true);
+  // Plataforma central decorativa
+  const { x: px, y: py, scale: ps } = toScreen(ARENA_W/2 - 60, FLOOR_Y - 8);
+  ctx2.fillStyle = '#1e293b';
+  ctx2.fillRect(px, py, 120 * ps, 10 * ps);
+  ctx2.strokeStyle = '#334155';
+  ctx2.lineWidth = 1;
+  ctx2.strokeRect(px, py, 120 * ps, 10 * ps);
+}
+
+function drawTorch(ctx2, x, y, scale) {
+  // Poste
+  ctx2.fillStyle = '#92400e';
+  ctx2.fillRect(x - 3*scale, y, 6*scale, 20*scale);
+  // Chama (animada com frame)
+  const flicker = Math.sin(localFrame * 0.18) * 3;
+  ctx2.save();
+  ctx2.globalAlpha = 0.9;
+  ctx2.fillStyle   = '#f59e0b';
+  ctx2.beginPath();
+  ctx2.moveTo(x, y - 10*scale);
+  ctx2.lineTo(x - 7*scale, y + flicker*scale);
+  ctx2.lineTo(x + 7*scale, y + flicker*scale);
+  ctx2.closePath();
+  ctx2.fill();
+  ctx2.globalAlpha = 0.5;
+  ctx2.fillStyle   = '#fde68a';
+  ctx2.beginPath();
+  ctx2.moveTo(x, y - 14*scale);
+  ctx2.lineTo(x - 4*scale, y + flicker*scale);
+  ctx2.lineTo(x + 4*scale, y + flicker*scale);
+  ctx2.closePath();
+  ctx2.fill();
+  // Glow
+  const radialGlow = ctx2.createRadialGradient(x, y, 0, x, y, 40*scale);
+  radialGlow.addColorStop(0,   'rgba(245,158,11,0.25)');
+  radialGlow.addColorStop(1,   'rgba(245,158,11,0)');
+  ctx2.globalAlpha = 0.6;
+  ctx2.fillStyle   = radialGlow;
+  ctx2.beginPath();
+  ctx2.arc(x, y, 40*scale, 0, Math.PI*2);
+  ctx2.fill();
+  ctx2.restore();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HUD
+// ═══════════════════════════════════════════════════════════════
+function updateHUD() {
+  const p1 = gs.p1, p2 = gs.p2;
+  document.getElementById('hud-p1-name').textContent = p1.nick;
+  document.getElementById('hud-p2-name').textContent = p2.nick;
+  document.getElementById('hud-p1-hp').style.width   = `${(p1.hp / p1.maxHp * 100).toFixed(1)}%`;
+  document.getElementById('hud-p2-hp').style.width   = `${(p2.hp / p2.maxHp * 100).toFixed(1)}%`;
+  document.getElementById('hud-p1-ult').style.width  = `${Math.min(100, p1.ult)}%`;
+  document.getElementById('hud-p2-ult').style.width  = `${Math.min(100, p2.ult)}%`;
+  document.getElementById('hud-p1-vals').textContent = `HP: ${Math.max(0,p1.hp)} | Ult: ${Math.floor(p1.ult)}`;
+  document.getElementById('hud-p2-vals').textContent = `HP: ${Math.max(0,p2.hp)} | Ult: ${Math.floor(p2.ult)}`;
+  document.getElementById('round-badge').textContent = `Round ${gs.round}`;
+  document.getElementById('timer-badge').textContent = `${Math.ceil(gs.timeLeft)}`;
+
+  // Botão ult
+  const mySlot = gs[PSLOT];
+  document.getElementById('btn-ult').style.opacity = mySlot && mySlot.ult >= 100 ? '1' : '0.4';
+
+  // Efeitos
+  const efxBar = document.getElementById('effect-bar');
+  if (mySlot && mySlot.effects && mySlot.effects.length) {
+    efxBar.innerHTML = mySlot.effects.map(e => `<div class="efx-badge">${e}</div>`).join('');
   } else {
-    el('end-e').textContent = '💀';
-    el('end-t').textContent = 'DERROTA';
-    el('end-s').textContent = 'Você perdeu. -100 XP';
-    Audio.playEnd(false);
+    efxBar.innerHTML = '';
   }
-
-  if (state.log?.length)
-    el('end-log').innerHTML = state.log.slice(-60)
-      .map(l => `<p>${esc(l)}</p>`).join('');
 }
 
-// ═══════════════════════════════════════════════════════════
-// AÇÕES
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// HIT TEXT (dano flutuante)
+// ═══════════════════════════════════════════════════════════════
+function spawnHitText(dmg, arenaX, arenaY, isCrit) {
+  const sc  = toScreen(arenaX, arenaY);
+  const div = document.createElement('div');
+  div.className  = 'hit-text';
+  div.textContent= isCrit ? `💥${dmg}!` : `-${dmg}`;
+  div.style.left = `${sc.x}px`;
+  div.style.top  = `${sc.y}px`;
+  div.style.fontSize = isCrit ? '18px' : '14px';
+  div.style.color    = isCrit ? '#f59e0b' : '#ef4444';
+  document.getElementById('hit-texts').appendChild(div);
+  setTimeout(() => div.remove(), 800);
+}
 
-window.act = action => {
-  if (sent || !state || state.phase !== 'fighting') return;
-  sent = true;
-  socket.emit('action', { roomId: ROOM, player: PLAYER, action });
-};
+// Também marca flash local para feedback imediato
+socket.on('hit_event', ev => {
+  const target = ev.target === 'p1' ? gs.p1 : gs.p2;
+  target.hitFlash = 6;
+  spawnHitText(ev.dmg, ev.x, ev.y, ev.isCrit);
+});
 
-window.showSp = () => {
-  const me = state?.[PLAYER];
-  if (!me || state?.phase !== 'fighting' || sent) return;
+// ═══════════════════════════════════════════════════════════════
+// ROUND END / GAME OVER
+// ═══════════════════════════════════════════════════════════════
+function handleRoundEnd(data) {
+  // Pausa breve, exibe resultado do round
+  const ov = document.getElementById('end-overlay');
+  document.getElementById('end-icon').textContent  = data.draw ? '🤝' : data.winner === PSLOT ? '✊' : '💀';
+  document.getElementById('end-title').textContent = data.draw ? 'ROUND EMPATE' : data.winner === PSLOT ? `ROUND ${gs.round} ✓` : `ROUND ${gs.round} ✗`;
+  document.getElementById('end-sub').textContent   = `Próximo round em 3s...`;
+  document.getElementById('end-xp').textContent    = '';
+  document.getElementById('btn-rematch').style.display = 'none';
+  ov.classList.remove('hidden');
+  setTimeout(() => ov.classList.add('hidden'), 3000);
+}
 
-  const grid = el('spgrid');
-  grid.innerHTML = '';
+function handleGameOver(data) {
+  gameRunning = false;
+  cancelAnimationFrame(animFrame);
 
-  for (const [id, s] of Object.entries(SP_DATA)) {
-    const cost     = Math.max(0, s.cost - (me.manaCostReduction || 0));
-    const cdLeft   = (me.spellCooldowns || {})[id] || 0;
-    const noMana   = (me.mana || 0) < cost;
-    const disabled = cdLeft > 0 || noMana;
+  const won  = data.winner === PSLOT;
+  const draw = data.draw;
 
-    const d = document.createElement('div');
-    d.className = `scard${disabled ? ' dis' : ''}`;
+  const ov = document.getElementById('end-overlay');
+  document.getElementById('end-icon').textContent  = draw ? '🤝' : won ? '🏆' : '💀';
+  document.getElementById('end-title').textContent = draw ? 'EMPATE!' : won ? 'VITÓRIA!' : 'DERROTA';
+  document.getElementById('end-sub').textContent   = draw
+    ? 'Ambos lutaram com honra!'
+    : won ? `Você derrotou ${gs[ENEMY].nick}!` : `${gs[ENEMY].nick} venceu!`;
+  document.getElementById('end-xp').textContent    = draw
+    ? '+20 XP'
+    : won ? '+100 XP' : '-100 XP';
+  document.getElementById('btn-rematch').style.display = 'block';
+  ov.classList.remove('hidden');
+}
 
-    let costLabel = `🔵 ${cost}`;
-    if (cdLeft > 0)  costLabel += ` <span class="cd-badge">(CD: ${cdLeft}r)</span>`;
-    else if (noMana) costLabel += ` <span style="color:#f87171">(sem mana)</span>`;
-
-    d.innerHTML = `
-      <div class="si">${s.icon}</div>
-      <div class="sn">${s.name}</div>
-      <div class="sd">${s.desc}</div>
-      <div class="sc">${costLabel}</div>
-    `;
-    if (!disabled) d.onclick = () => { act(`magia: ${id}`); hideSp(); };
-    grid.appendChild(d);
-  }
-
-  el('spov').classList.remove('hidden');
-};
-
-window.hideSp = () => el('spov').classList.add('hidden');
-
-el('spov').addEventListener('click', e => {
-  if (e.target === el('spov')) hideSp();
+document.getElementById('btn-rematch').addEventListener('click', () => {
+  location.reload();
 });
 </script>
 </body>

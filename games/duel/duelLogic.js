@@ -1,24 +1,481 @@
 'use strict';
 
 // ============================================================
-// games/duel/duelLogic.js — Lógica completa do Duel Arena
+// games/duel/duelLogic.js — Lógica Duel Arena 2D
 // Exporta setupRoutes(app) e setupSocket(io)
 // ============================================================
 
-const path = require('path');
-const rooms = new Map();
+const path  = require('path');
+const rooms = new Map(); // salas 2D
 
-const rand   = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
-const chance = p => Math.random() * 100 < p;
-const genId  = () => Math.random().toString(36).substr(2, 8).toUpperCase();
-const clamp  = (v, min, max) => Math.max(min, Math.min(max, v));
+const genId = () => Math.random().toString(36).substr(2, 8).toUpperCase();
+const clamp = (v, mn, mx) => Math.max(mn, Math.min(mx, v));
+const rand  = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
 
-// ─────────────────────────────────────────────────────────────
+// ─── Constantes de física/jogo ────────────────────────────────
+const ARENA_W    = 800;
+const ARENA_H    = 450;
+const FLOOR_Y    = 340;
+const GRAVITY    = 0.55;
+const JUMP_VEL   = -13;
+const MOVE_SPEED = 4.2;
+const MAX_HP     = 120;
+const ROUND_DUR  = 60;   // segundos
+const TICK_MS    = 50;   // 20 ticks/s
+const CHAR_W     = 28;
+const CHAR_H     = 44;
+
+// ─── Dados de relíquias (mapeamento para stats 2D) ───────────
+// Mantém compatibilidade total com o sistema de relíquias existente
+function applyBonusToPlayer(player, bonus) {
+  const b = bonus || {};
+  player.maxHp           += (Number(b.maxHpBonus)      || 0);
+  player.hp               = player.maxHp;
+  player.dmgBonus        += (Number(b.dmgBonus)         || 0);
+  player.dodgeBonus      += (Number(b.dodgeBonus)       || 0);
+  player.damageReduction += (Number(b.damageReduction)  || 0);
+  player.regenPerRound   += (Number(b.regenPerRound)    || 0);
+  player.ultBonus        += (Number(b.ultimatePowerBonus)|| 0);
+  if (b.startUltimate)   player.ult = clamp(Number(b.startUltimate), 0, 100);
+  return player;
+}
+
+// ─── Factory de jogador 2D ────────────────────────────────────
+function makePlayer2D(slot, jid, bonus = {}) {
+  const p = {
+    slot, jid,
+    x: slot === 'p1' ? 150 : 620,
+    y: FLOOR_Y,
+    vx: 0, vy: 0,
+    onGround: true,
+    hp: MAX_HP, maxHp: MAX_HP,
+    ult: 0,
+    state:   'idle',   // idle | walk | jump | attack | hurt | block | dead
+    flipped: slot === 'p2',
+    charId:  'warrior',
+    skin:    '#ef4444',
+    nick:    slot,
+    effects: [],
+    blocking:       false,
+    attackCooldown: 0,
+    hurtTimer:      0,
+    dmgBonus:          0,
+    dodgeBonus:        0,
+    damageReduction:   0,
+    regenPerRound:     0,
+    ultBonus:          0,
+    lastInputDx:       0,
+    ready:             false,
+  };
+  applyBonusToPlayer(p, bonus);
+  return p;
+}
+
+// ─── Factory de sala ──────────────────────────────────────────
+function makeRoom(roomId, p1Jid, p2Jid, p1Bonus, p2Bonus, isVsBot, difficulty) {
+  const room = {
+    id:       roomId,
+    phase:    'lobby',   // lobby | countdown | fight | round_end | ended
+    round:    1,
+    maxRounds:3,
+    wins:     { p1: 0, p2: 0 },
+    timeLeft: ROUND_DUR,
+    isVsBot:  !!isVsBot,
+    difficulty: difficulty || 'medium',
+    p1: makePlayer2D('p1', p1Jid, p1Bonus),
+    p2: makePlayer2D('p2', p2Jid || 'bot', p2Bonus),
+    tickInterval: null,
+    lastTick: Date.now(),
+    createdAt: Date.now(),
+    sockets: { p1: null, p2: null },
+    winner: null,
+  };
+  return room;
+}
+
+// ─── Hitboxes ─────────────────────────────────────────────────
+function getHitbox(p) {
+  return { x: p.x - CHAR_W/2, y: p.y - CHAR_H, w: CHAR_W, h: CHAR_H };
+}
+function rectsOverlap(a, b) {
+  return a.x < b.x + b.w && a.x + a.w > b.x &&
+         a.y < b.y + b.h && a.y + a.h > b.y;
+}
+function getAttackBox(p) {
+  const dir  = p.flipped ? -1 : 1;
+  const base = getHitbox(p);
+  return {
+    x: p.flipped ? base.x - 30 : base.x + CHAR_W,
+    y: base.y + 8,
+    w: 32, h: 28,
+  };
+}
+function getHeavyBox(p) {
+  const base = getAttackBox(p);
+  return { x: base.x, y: base.y - 4, w: 40, h: 36 };
+}
+
+// ─── Dano / hit ───────────────────────────────────────────────
+function dealDamage(attacker, target, rawDmg, isHeavy, isUlt) {
+  if (target.hp <= 0 || target.state === 'dead') return 0;
+  let dmg = rawDmg + (attacker.dmgBonus || 0);
+  const isCrit = Math.random() < 0.12;
+  if (isCrit) dmg = Math.floor(dmg * 1.5);
+  if (isHeavy) dmg = Math.floor(dmg * 1.35);
+  if (isUlt)   dmg = Math.floor(dmg * 1.8);
+  // Redução de dano (relíquia / blocking)
+  if (target.blocking) dmg = Math.floor(dmg * 0.2);
+  else if ((target.damageReduction || 0) > 0)
+    dmg = Math.floor(dmg * (1 - target.damageReduction));
+  dmg = Math.max(1, dmg);
+  target.hp = Math.max(0, target.hp - dmg);
+  target.hurtTimer = 8;
+  target.state     = 'hurt';
+  // Knockback
+  const dir = attacker.x < target.x ? 1 : -1;
+  target.vx += dir * (isHeavy ? 5 : 2.5);
+  target.vy += isUlt ? -5 : -2;
+  // Carga de ultimate
+  attacker.ult = clamp(attacker.ult + (isUlt ? 0 : isHeavy ? 12 : 8), 0, 100);
+  return dmg;
+}
+
+// ─── Física ───────────────────────────────────────────────────
+function stepPhysics(p) {
+  // Gravidade
+  if (!p.onGround) {
+    p.vy += GRAVITY;
+  }
+  // Fricção horizontal
+  if (p.onGround) {
+    p.vx *= 0.78;
+  } else {
+    p.vx *= 0.92;
+  }
+  // Movimento de input
+  if (p.state !== 'attack' && p.state !== 'hurt' && p.state !== 'dead' && !p.blocking) {
+    p.vx += p.lastInputDx * MOVE_SPEED;
+  }
+
+  p.x += p.vx;
+  p.y += p.vy;
+
+  // Chão
+  if (p.y >= FLOOR_Y) {
+    p.y        = FLOOR_Y;
+    p.vy       = 0;
+    p.onGround = true;
+    if (p.state === 'jump') p.state = 'idle';
+  } else {
+    p.onGround = false;
+  }
+  // Paredes
+  p.x = clamp(p.x, 20, ARENA_W - 20);
+
+  // Face o oponente (flipping) — apenas se não atacando
+  // Feito pelo servidor com os dados de posição
+}
+
+// ─── Estado de animação ───────────────────────────────────────
+function updatePlayerState(p) {
+  if (p.state === 'dead') return;
+  if (p.attackCooldown > 0) p.attackCooldown--;
+  if (p.hurtTimer > 0) {
+    p.hurtTimer--;
+    if (p.hurtTimer <= 0 && p.state === 'hurt') p.state = 'idle';
+    return;
+  }
+  if (p.blocking) { p.state = 'block'; return; }
+  if (!p.onGround) { if (p.state !== 'attack') p.state = 'jump'; return; }
+  if (p.state === 'attack') return; // mantém até cooldown acabar
+  if (Math.abs(p.vx + p.lastInputDx * MOVE_SPEED) > 0.5) {
+    p.state = 'walk';
+  } else {
+    p.state = 'idle';
+  }
+}
+
+// ─── IA do bot ────────────────────────────────────────────────
+function botAI(room) {
+  const bot    = room.p2;
+  const enemy  = room.p1;
+  const diff   = room.difficulty;
+  const dist   = Math.abs(bot.x - enemy.x);
+
+  if (diff === 'easy') {
+    if (bot.hp < 30) { bot.blocking = true; return; }
+    bot.blocking     = false;
+    bot.lastInputDx  = bot.x > enemy.x ? -0.6 : 0.6;
+    if (dist < 60 && bot.attackCooldown <= 0 && Math.random() < 0.3) {
+      doAttack(bot, enemy, 'light', room);
+    }
+    return;
+  }
+
+  bot.blocking = false;
+
+  // Move para o inimigo
+  if (dist > 55) {
+    bot.lastInputDx = bot.x > enemy.x ? -1 : 1;
+  } else {
+    bot.lastInputDx = 0;
+  }
+
+  if (diff === 'medium') {
+    if (enemy.ult >= 100 && Math.random() < 0.4) { bot.blocking = true; return; }
+    if (dist < 65 && bot.attackCooldown <= 0) {
+      if (Math.random() < 0.5) doAttack(bot, enemy, 'heavy', room);
+      else                     doAttack(bot, enemy, 'light', room);
+    }
+    if (bot.ult >= 100 && dist < 80) doAttack(bot, enemy, 'ult', room);
+    return;
+  }
+
+  // hard / ai
+  if (enemy.hp < 30 && bot.ult >= 100 && dist < 90) {
+    doAttack(bot, enemy, 'ult', room); return;
+  }
+  if (enemy.blocking && dist < 65 && bot.attackCooldown <= 0) {
+    doAttack(bot, enemy, 'heavy', room); return;
+  }
+  if (dist < 60 && bot.attackCooldown <= 0) {
+    const r = Math.random();
+    if (r < 0.35)      doAttack(bot, enemy, 'heavy',   room);
+    else if (r < 0.55) doAttack(bot, enemy, 'special', room);
+    else               doAttack(bot, enemy, 'light',   room);
+    return;
+  }
+  // Pulo evasivo se inimigo atacar
+  if (enemy.state === 'attack' && bot.onGround && Math.random() < 0.4) {
+    bot.vy       = JUMP_VEL * 0.8;
+    bot.onGround = false;
+    bot.state    = 'jump';
+  }
+}
+
+// ─── Executar ataque ─────────────────────────────────────────
+function doAttack(attacker, target, type, room) {
+  if (attacker.attackCooldown > 0) return;
+  if (attacker.state === 'dead')   return;
+
+  attacker.state = 'attack';
+
+  switch (type) {
+    case 'light': {
+      attacker.attackCooldown = 14;
+      const box = getAttackBox(attacker);
+      const thb = getHitbox(target);
+      if (rectsOverlap(box, thb)) {
+        const dmg = dealDamage(attacker, target, rand(8, 15), false, false);
+        if (dmg > 0) emitHit(room, target, dmg, false);
+      }
+      break;
+    }
+    case 'heavy': {
+      attacker.attackCooldown = 22;
+      const box = getHeavyBox(attacker);
+      const thb = getHitbox(target);
+      if (rectsOverlap(box, thb)) {
+        const dmg = dealDamage(attacker, target, rand(18, 28), true, false);
+        if (dmg > 0) emitHit(room, target, dmg, false);
+      }
+      break;
+    }
+    case 'special': {
+      attacker.attackCooldown = 30;
+      // Projétil especial: verifica distância
+      const dist = Math.abs(attacker.x - target.x);
+      if (dist < 180) {
+        const dmg = dealDamage(attacker, target, rand(12, 22), false, false);
+        if (dmg > 0) emitHit(room, target, dmg, true);
+      }
+      break;
+    }
+    case 'ult': {
+      if (attacker.ult < 100) return;
+      attacker.attackCooldown = 40;
+      attacker.ult = 0;
+      const dist = Math.abs(attacker.x - target.x);
+      if (dist < 120) {
+        const ultDmg = rand(40, 55 + (attacker.ultBonus || 0));
+        const dmg = dealDamage(attacker, target, ultDmg, false, true);
+        if (dmg > 0) emitHit(room, target, dmg, true);
+      }
+      break;
+    }
+  }
+}
+
+// ─── Emite evento de hit ──────────────────────────────────────
+function emitHit(room, target, dmg, isCrit) {
+  if (!room._io) return;
+  room._io.to(room.id).emit('hit_event', {
+    target: target.slot,
+    dmg,
+    isCrit,
+    x: target.x,
+    y: target.y - 40,
+  });
+}
+
+// ─── Atualizar face (flipping) ────────────────────────────────
+function updateFacing(p1, p2) {
+  if (p1.state !== 'attack' && p1.state !== 'hurt') p1.flipped = p1.x > p2.x;
+  if (p2.state !== 'attack' && p2.state !== 'hurt') p2.flipped = p2.x < p1.x;
+}
+
+// ─── Tick principal ───────────────────────────────────────────
+function gameTick(room) {
+  if (room.phase !== 'fight') return;
+
+  const now   = Date.now();
+  const dt    = (now - room.lastTick) / 1000;
+  room.lastTick = now;
+
+  room.timeLeft = Math.max(0, room.timeLeft - dt);
+
+  // IA do bot
+  if (room.isVsBot) botAI(room);
+
+  // Física
+  stepPhysics(room.p1);
+  stepPhysics(room.p2);
+
+  // Face
+  updateFacing(room.p1, room.p2);
+
+  // Estado
+  updatePlayerState(room.p1);
+  updatePlayerState(room.p2);
+
+  // Regen de HP por relíquia
+  if (room.p1.regenPerRound > 0 && room.p1.hp > 0)
+    room.p1.hp = clamp(room.p1.hp + room.p1.regenPerRound * dt, 0, room.p1.maxHp);
+  if (room.p2.regenPerRound > 0 && room.p2.hp > 0)
+    room.p2.hp = clamp(room.p2.hp + room.p2.regenPerRound * dt, 0, room.p2.maxHp);
+
+  // Verifica fim de round
+  const p1Dead = room.p1.hp <= 0;
+  const p2Dead = room.p2.hp <= 0;
+  const timeout = room.timeLeft <= 0;
+
+  if (p1Dead || p2Dead || timeout) {
+    endRound(room, p1Dead, p2Dead, timeout);
+    return;
+  }
+
+  // Envia estado
+  broadcastState(room);
+}
+
+// ─── Fim de round ─────────────────────────────────────────────
+function endRound(room, p1Dead, p2Dead, timeout) {
+  room.phase = 'round_end';
+  clearInterval(room.tickInterval);
+  room.tickInterval = null;
+
+  let roundWinner = null;
+  const draw = (p1Dead && p2Dead) || (timeout && Math.abs(room.p1.hp - room.p2.hp) < 5);
+
+  if (!draw) {
+    if (timeout) roundWinner = room.p1.hp >= room.p2.hp ? 'p1' : 'p2';
+    else         roundWinner = p2Dead ? 'p1' : 'p2';
+    room.wins[roundWinner]++;
+  }
+
+  if (room._io) {
+    room._io.to(room.id).emit('round_end', {
+      winner: roundWinner,
+      draw,
+      wins: room.wins,
+      round: room.round,
+    });
+  }
+
+  // Verifica fim de jogo (melhor de 3)
+  const maxWins = Math.ceil(room.maxRounds / 2);
+  if (room.wins.p1 >= maxWins || room.wins.p2 >= maxWins) {
+    setTimeout(() => endGame(room, room.wins.p1 > room.wins.p2 ? 'p1' : 'p2', false), 3200);
+    return;
+  }
+
+  // Próximo round
+  room.round++;
+  setTimeout(() => startFight(room), 3200);
+}
+
+// ─── Inicia fase de luta ──────────────────────────────────────
+function startFight(room) {
+  // Reset posições e HP parcial (não regenera tudo)
+  room.p1.x = 150; room.p1.y = FLOOR_Y; room.p1.vx = 0; room.p1.vy = 0;
+  room.p2.x = 620; room.p2.y = FLOOR_Y; room.p2.vx = 0; room.p2.vy = 0;
+  room.p1.hp = clamp(room.p1.hp + 20, 1, room.p1.maxHp);
+  room.p2.hp = clamp(room.p2.hp + 20, 1, room.p2.maxHp);
+  room.p1.state = 'idle'; room.p2.state = 'idle';
+  room.p1.effects = []; room.p2.effects = [];
+  room.p1.blocking = false; room.p2.blocking = false;
+  room.p1.attackCooldown = 0; room.p2.attackCooldown = 0;
+  room.timeLeft = ROUND_DUR;
+  room.phase    = 'fight';
+  room.lastTick = Date.now();
+
+  room.tickInterval = setInterval(() => gameTick(room), TICK_MS);
+  broadcastState(room);
+}
+
+// ─── Fim de jogo ─────────────────────────────────────────────
+function endGame(room, winner, draw) {
+  room.phase  = 'ended';
+  room.winner = draw ? 'draw' : winner;
+
+  if (room._io) {
+    room._io.to(room.id).emit('game_over', {
+      winner: room.winner,
+      draw:   !!draw,
+      wins:   room.wins,
+    });
+    room._io.to(room.id).emit('game_state', sanitize(room));
+  }
+}
+
+// ─── Broadcast de estado ──────────────────────────────────────
+function broadcastState(room) {
+  if (!room._io) return;
+  room._io.to(room.id).emit('game_state', sanitize(room));
+}
+
+// ─── Sanitize ─────────────────────────────────────────────────
+function sanitize(room) {
+  const sp = p => ({
+    slot:    p.slot,
+    x:       Math.round(p.x * 10) / 10,
+    y:       Math.round(p.y * 10) / 10,
+    hp:      Math.max(0, Math.round(p.hp)),
+    maxHp:   p.maxHp,
+    ult:     Math.round(p.ult),
+    state:   p.state,
+    flipped: p.flipped,
+    charId:  p.charId,
+    skin:    p.skin,
+    nick:    p.nick,
+    effects: p.effects || [],
+    blocking:p.blocking || false,
+  });
+  return {
+    p1:       sp(room.p1),
+    p2:       sp(room.p2),
+    round:    room.round,
+    timeLeft: Math.round(room.timeLeft * 10) / 10,
+    phase:    room.phase,
+    wins:     room.wins,
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════
 // ROTAS REST
-// ─────────────────────────────────────────────────────────────
-
+// ═══════════════════════════════════════════════════════════════
 function setupRoutes(app) {
-  // Resultado da sala (polling pelo bot para XP)
+  // Resultado para polling do bot (XP)
   app.get('/duel/room/:roomId/result', (req, res) => {
     const room = rooms.get(req.params.roomId);
     if (!room) return res.status(404).json({ error: 'not_found' });
@@ -28,434 +485,143 @@ function setupRoutes(app) {
       winner:  room.winner,
       p1Jid:   room.p1.jid,
       p2Jid:   room.p2.jid,
-      p1IsBot: room.p1.isBot,
-      p2IsBot: room.p2.isBot,
+      p1IsBot: false,
+      p2IsBot: room.isVsBot,
     });
   });
 
-  // Cria nova sala
+  // Cria sala
   app.post('/duel/room', (req, res) => {
     const { p1Jid, p2Jid, isVsBot, difficulty, p1Bonus, p2Bonus } = req.body;
     if (!p1Jid) return res.status(400).json({ error: 'p1Jid obrigatório' });
 
-    console.log(`[DUEL] Criando sala | p1: ${p1Jid} | isVsBot: ${isVsBot} | diff: ${difficulty}`);
-    console.log(`[DUEL] p1Bonus:`, JSON.stringify(p1Bonus || {}));
-    console.log(`[DUEL] p2Bonus:`, JSON.stringify(p2Bonus || {}));
+    console.log(`[DUEL2D] Sala criada | p1:${p1Jid} | vsBot:${isVsBot} | diff:${difficulty}`);
+    console.log(`[DUEL2D] p1Bonus:`, JSON.stringify(p1Bonus || {}));
+    console.log(`[DUEL2D] p2Bonus:`, JSON.stringify(p2Bonus || {}));
 
     const roomId = genId();
-    const p1 = makePlayer(p1Jid, false, p1Bonus || {});
-    const p2 = isVsBot
-      ? makePlayer('sentinel', true, {})
-      : makePlayer(p2Jid || 'unknown', false, p2Bonus || {});
+    const room   = makeRoom(roomId, p1Jid, p2Jid, p1Bonus || {}, p2Bonus || {}, isVsBot, difficulty);
+    rooms.set(roomId, room);
 
-    rooms.set(roomId, {
-      id: roomId, phase: 'fighting', round: 1,
-      isVsBot: !!isVsBot, difficulty: difficulty || 'medium',
-      log: [], p1, p2, createdAt: Date.now(),
-    });
+    // Expira em 30 min
+    setTimeout(() => {
+      if (rooms.has(roomId)) {
+        clearInterval(rooms.get(roomId).tickInterval);
+        rooms.delete(roomId);
+      }
+    }, 30 * 60_000);
 
-    console.log(`[DUEL] p1 | HP:${p1.hp} dmg:${p1.dmgBonus} regen:${p1.regenPerRound} dodge:${p1.dodgeBonus} dr:${p1.damageReduction}`);
-
-    // Expira em 25 min
-    setTimeout(() => rooms.delete(roomId), 25 * 60_000);
     res.json({ roomId });
   });
 }
 
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 // SOCKET.IO
-// ─────────────────────────────────────────────────────────────
-
+// ═══════════════════════════════════════════════════════════════
 function setupSocket(io) {
   io.on('connection', socket => {
-    socket.on('join', ({ roomId, player }) => {
+
+    // ── Join: identifica sala e slot
+    socket.on('join_2d', ({ roomId, slot }) => {
       const room = rooms.get(roomId);
-      if (!room) return socket.emit('error', 'Sala não encontrada');
+      if (!room) { socket.emit('error_msg', 'Sala não encontrada.'); return; }
       socket.join(roomId);
-      socket.emit('state', sanitize(room));
+      room.sockets[slot] = socket.id;
+      room._io = io;
+      socket.emit('game_state', sanitize(room));
     });
 
-    socket.on('action', ({ roomId, player, action }) => {
+    // ── Player pronto (saiu do lobby)
+    socket.on('player_ready', ({ roomId, slot, nick, charId, skin }) => {
       const room = rooms.get(roomId);
-      if (!room || room.phase !== 'fighting') return;
-      const p = room[player];
-      if (!p || p.action !== null) return;
-      if (!isValidAction(action, p)) {
-        socket.emit('error', 'Ação inválida ou recursos insuficientes.');
-        return;
-      }
-      p.action = action;
-      if (room.isVsBot && room.p2.action === null) {
-        room.p2.action = botAction(room, room.p2, room.p1);
-      }
-      if (room.p1.action !== null && room.p2.action !== null) {
-        const log = processRound(room);
-        room.log = [...room.log, `━━ Round ${room.round} ━━`, ...log].slice(-80);
-        const dead1 = room.p1.hp <= 0, dead2 = room.p2.hp <= 0;
-        if (dead1 || dead2) {
-          room.phase  = 'ended';
-          room.winner = dead1 && dead2 ? 'draw' : dead2 ? 'p1' : 'p2';
-        } else {
-          room.round++;
+      if (!room) return;
+
+      const p = room[slot];
+      if (!p) return;
+      p.nick   = (nick  || slot).substring(0, 16);
+      p.charId = charId || 'warrior';
+      p.skin   = skin   || '#ef4444';
+      p.ready  = true;
+
+      console.log(`[DUEL2D] ${slot} pronto: ${p.nick} | char:${p.charId}`);
+
+      const p1Ready = room.p1.ready;
+      const p2Ready = room.isVsBot ? true : room.p2.ready;
+
+      if (p1Ready && p2Ready) {
+        // Se vs bot, configura bot
+        if (room.isVsBot) {
+          room.p2.nick   = 'Sentinel';
+          room.p2.charId = ['warrior','mage','ninja','demon'][Math.floor(Math.random()*4)];
+          room.p2.skin   = '#ef4444';
         }
+        io.to(roomId).emit('both_ready');
+        setTimeout(() => startFight(room), 1000);
+      } else {
+        socket.emit('waiting_opponent');
       }
-      io.to(roomId).emit('state', sanitize(room));
+    });
+
+    // ── Input do jogador
+    socket.on('player_input', ({ roomId, slot, type, dx }) => {
+      const room = rooms.get(roomId);
+      if (!room || room.phase !== 'fight') return;
+      const p      = room[slot];
+      const target = slot === 'p1' ? room.p2 : room.p1;
+      if (!p || p.state === 'dead') return;
+
+      switch (type) {
+        case 'move':
+          p.lastInputDx = clamp(dx || 0, -1, 1);
+          break;
+
+        case 'jump':
+          if (p.onGround && p.state !== 'hurt') {
+            p.vy       = JUMP_VEL;
+            p.onGround = false;
+            p.state    = 'jump';
+          }
+          break;
+
+        case 'block':
+          p.blocking = !p.blocking;
+          p.state    = p.blocking ? 'block' : 'idle';
+          break;
+
+        case 'attack_light':
+          if (p.attackCooldown <= 0 && p.state !== 'hurt') {
+            doAttack(p, target, 'light', room);
+          }
+          break;
+
+        case 'attack_heavy':
+          if (p.attackCooldown <= 0 && p.state !== 'hurt') {
+            doAttack(p, target, 'heavy', room);
+          }
+          break;
+
+        case 'special':
+          if (p.attackCooldown <= 0 && p.state !== 'hurt') {
+            doAttack(p, target, 'special', room);
+          }
+          break;
+
+        case 'ultimate':
+          if (p.ult >= 100 && p.attackCooldown <= 0) {
+            doAttack(p, target, 'ult', room);
+          }
+          break;
+      }
+    });
+
+    socket.on('disconnect', () => {
+      // Marca slot como desconectado — sala não destrói imediatamente (permite reconexão)
+      for (const [, room] of rooms) {
+        if (room.sockets.p1 === socket.id) room.sockets.p1 = null;
+        if (room.sockets.p2 === socket.id) room.sockets.p2 = null;
+      }
     });
   });
-}
-
-// ─────────────────────────────────────────────────────────────
-// FACTORY DE JOGADOR
-// ─────────────────────────────────────────────────────────────
-
-function makePlayer(jid, isBot = false, bonus = {}) {
-  const b = bonus && typeof bonus === 'object' ? bonus : {};
-  return {
-    jid, isBot,
-    hp:               120 + (Number(b.maxHpBonus)     || 0),
-    maxHp:            120 + (Number(b.maxHpBonus)     || 0),
-    mana:              60 + (Number(b.maxManaBonus)   || 0),
-    maxMana:           60 + (Number(b.maxManaBonus)   || 0),
-    energy:            50 + (Number(b.maxEnergyBonus) || 0),
-    maxEnergy:         50 + (Number(b.maxEnergyBonus) || 0),
-    potions:            2 + (Number(b.extraPotions)   || 0),
-    effects:           [],
-    ultimate:          Number(b.startUltimate)        || 0,
-    action:            null,
-    defending:         false,
-    spellCooldowns:    {},
-    manaCostReduction:  Number(b.manaCostReduction)  || 0,
-    dmgBonus:           Number(b.dmgBonus)           || 0,
-    dodgeBonus:         Number(b.dodgeBonus)         || 0,
-    damageReduction:    Number(b.damageReduction)    || 0,
-    regenPerRound:      Number(b.regenPerRound)      || 0,
-    spellPowerBonus:    Number(b.spellPowerBonus)    || 0,
-    ultimatePowerBonus: Number(b.ultimatePowerBonus) || 0,
-  };
-}
-
-// ─────────────────────────────────────────────────────────────
-// FEITIÇOS
-// ─────────────────────────────────────────────────────────────
-
-const SPELLS = {
-  bola_de_fogo:  { cost: 25, cd: 2 },
-  raio:          { cost: 30, cd: 2 },
-  gelo:          { cost: 20, cd: 4 },
-  veneno:        { cost: 15, cd: 3 },
-  cura:          { cost: 20, cd: 2 },
-  escudo_magico: { cost: 18, cd: 2 },
-  furia:         { cost: 20, cd: 2 },
-  fraqueza:      { cost: 15, cd: 2 },
-  silencio:      { cost: 20, cd: 3 },
-  correntes:     { cost: 25, cd: 2 },
-};
-
-const hasEffect    = (p, t) => p.effects.some(e => e.type === t && e.rounds > 0);
-const removeEffect = (p, t) => { p.effects = p.effects.filter(e => e.type !== t); };
-function addEffect(p, type, rounds, value = 0) {
-  removeEffect(p, type);
-  p.effects.push({ type, rounds, value });
-}
-
-// ─────────────────────────────────────────────────────────────
-// VALIDAÇÃO DE AÇÃO
-// ─────────────────────────────────────────────────────────────
-
-function isValidAction(action, player) {
-  if (!action || typeof action !== 'string') return false;
-  if (action.startsWith('magia:')) {
-    const id = action.split(':')[1]?.trim();
-    if (!SPELLS[id]) return false;
-    const cost = Math.max(0, SPELLS[id].cost - (player.manaCostReduction || 0));
-    if (player.mana < cost)                   return false;
-    if ((player.spellCooldowns[id] || 0) > 0) return false;
-    return true;
-  }
-  const VALID = new Set([
-    'ataque leve','ataque pesado','defesa','esquiva',
-    'contra-ataque','break guard','focus','usar item','ultimate',
-  ]);
-  return VALID.has(action);
-}
-
-// ─────────────────────────────────────────────────────────────
-// PROCESSAMENTO DE ROUND
-// ─────────────────────────────────────────────────────────────
-
-function processRound(room) {
-  const { p1, p2 } = room;
-  const log  = [];
-  const n1   = p1.isBot ? 'Sentinel' : 'P1';
-  const n2   = p2.isBot ? 'Sentinel' : 'P2';
-  const act1 = p1.action;
-  const act2 = p2.action;
-  p1.defending = false; p2.defending = false;
-  let dodge1 = false, dodge2 = false;
-
-  const isStunned = p => hasEffect(p, '🧊 Congelado') || hasEffect(p, '⚡ Stun');
-
-  // ── Passivas (defesa, esquiva, focus, poção)
-  const resolvePassive = (actor, action, aName) => {
-    if (isStunned(actor)) { log.push(`🚫 ${aName} está impedido de agir!`); return; }
-    if (action === 'defesa') {
-      actor.defending = true;
-      log.push(`🛡️ ${aName} em postura defensiva! (-50% dano)`);
-    } else if (action === 'esquiva') {
-      if (hasEffect(actor, '⛓️ Correntes')) {
-        log.push(`⛓️ ${aName} está preso! Não pode esquivar!`);
-      } else if (chance(40 + (actor.dodgeBonus || 0))) {
-        if (actor === p1) dodge1 = true; else dodge2 = true;
-        log.push(`💨 ${aName} se prepara para esquivar!`);
-      } else {
-        log.push(`💨 ${aName} tentou esquivar mas falhou!`);
-      }
-    } else if (action === 'focus') {
-      const mGain = rand(15, 25), eGain = rand(10, 20);
-      actor.mana   = clamp(actor.mana   + mGain, 0, actor.maxMana);
-      actor.energy = clamp(actor.energy + eGain, 0, actor.maxEnergy);
-      log.push(`🧘 ${aName} foca! +${mGain} Mana, +${eGain} ⚡`);
-    } else if (action === 'usar item') {
-      if (actor.potions > 0) {
-        const heal = rand(30, 45);
-        actor.hp = clamp(actor.hp + heal, 0, actor.maxHp);
-        actor.potions--;
-        log.push(`🧪 ${aName} usa poção! +${heal} HP (${actor.potions} restante(s))`);
-      } else {
-        log.push(`🧪 ${aName} não tem poções!`);
-      }
-    }
-  };
-
-  resolvePassive(p1, act1, n1);
-  resolvePassive(p2, act2, n2);
-
-  // ── Aplica dano respeitando escudo, defesa, redução de relíquia e esquiva
-  const applyDamage = (target, rawDmg, targetName, logMsg) => {
-    let dmg = rawDmg;
-    const shield = target.effects.find(e => e.type === '🛡️ Escudo Mágico' && e.rounds > 0);
-    if (shield) {
-      dmg = Math.ceil(dmg * (1 - shield.value));
-    } else if (target.defending) {
-      dmg = Math.ceil(dmg * 0.5);
-    } else if ((target.damageReduction || 0) > 0) {
-      const reduced = Math.ceil(dmg * (1 - target.damageReduction));
-      log.push(`🌑 ${targetName} relíquia absorve parte do dano! (${dmg} → ${reduced})`);
-      dmg = reduced;
-    }
-    const dodged = (target === p1 && dodge1) || (target === p2 && dodge2);
-    if (dodged) { log.push(`💨 ${targetName} esquiva do ataque!`); return; }
-    dmg = Math.max(1, dmg);
-    target.hp -= dmg;
-    log.push(logMsg.replace('{DMG}', dmg));
-  };
-
-  // ── Ofensivas
-  const resolveOffensive = (actor, target, action, aName, dName) => {
-    if (isStunned(actor)) return;
-    const fury    = hasEffect(actor, '😤 Fúria')   ? 10 : 0;
-    const weak    = hasEffect(actor, '💫 Fraqueza') ?  8 : 0;
-    const dmgPlus = actor.dmgBonus || 0;
-
-    switch (action) {
-      case 'ataque leve': {
-        const base = rand(8, 15) + fury - weak + dmgPlus;
-        applyDamage(target, base, dName, `⚔️ ${aName} ataque leve em ${dName}! -{DMG} HP`);
-        actor.ultimate = clamp(actor.ultimate + 5, 0, 100);
-        break;
-      }
-      case 'ataque pesado': {
-        if (actor.energy < 15) { log.push(`💢 ${aName} sem energia!`); return; }
-        actor.energy -= 15;
-        const base = rand(20, 32) + fury - weak + dmgPlus;
-        applyDamage(target, base, dName, `💢 ${aName} ataque pesado em ${dName}! -{DMG} HP`);
-        actor.ultimate = clamp(actor.ultimate + 8, 0, 100);
-        break;
-      }
-      case 'contra-ataque': {
-        if (actor.energy < 20) { log.push(`↩️ ${aName} sem energia!`); return; }
-        actor.energy -= 20;
-        const base  = rand(10, 18) + fury - weak + dmgPlus;
-        const bonus = ['ataque leve','ataque pesado'].includes(target.action) ? rand(5, 10) : 0;
-        applyDamage(target, base + bonus, dName,
-          `↩️ ${aName} contra-ataca ${dName}!${bonus ? ` (COUNTER +${bonus})` : ''} -{DMG} HP`);
-        actor.ultimate = clamp(actor.ultimate + 6, 0, 100);
-        break;
-      }
-      case 'break guard': {
-        if (actor.energy < 25) { log.push(`🔨 ${aName} sem energia!`); return; }
-        actor.energy -= 25;
-        const savedDef = target.defending;
-        target.defending = false;
-        const base = rand(12, 20) + fury - weak + dmgPlus;
-        applyDamage(target, base, dName,
-          `🔨 ${aName} quebra a guarda de ${dName}! -{DMG} HP${savedDef ? ' (GUARD QUEBRADO!)' : ''}`);
-        actor.ultimate = clamp(actor.ultimate + 7, 0, 100);
-        break;
-      }
-      case 'ultimate': {
-        if (actor.ultimate < 100) { log.push(`✨ ${aName} ultimate não carregado!`); return; }
-        const base = rand(45, 65 + (actor.ultimatePowerBonus || 0));
-        applyDamage(target, base, dName, `✨✨ ${aName} ULTIMATE em ${dName}! -{DMG} HP`);
-        actor.ultimate = 0;
-        break;
-      }
-      default: {
-        if (action.startsWith('magia:')) {
-          const spellId = action.split(':')[1]?.trim();
-          processSpell(actor, target, spellId, aName, dName, log);
-        }
-        break;
-      }
-    }
-  };
-
-  resolveOffensive(p1, p2, act1, n1, n2);
-  resolveOffensive(p2, p1, act2, n2, n1);
-
-  // Regen de energia
-  p1.energy = clamp(p1.energy + rand(8, 12), 0, p1.maxEnergy);
-  p2.energy = clamp(p2.energy + rand(8, 12), 0, p2.maxEnergy);
-
-  // Regen de HP por relíquia
-  if ((p1.regenPerRound || 0) > 0 && p1.hp > 0) {
-    p1.hp = clamp(p1.hp + p1.regenPerRound, 0, p1.maxHp);
-    log.push(`💚 ${n1} regenera +${p1.regenPerRound} HP (relíquia) → ${p1.hp}/${p1.maxHp}`);
-  }
-  if ((p2.regenPerRound || 0) > 0 && p2.hp > 0) {
-    p2.hp = clamp(p2.hp + p2.regenPerRound, 0, p2.maxHp);
-    log.push(`💚 ${n2} regenera +${p2.regenPerRound} HP (relíquia) → ${p2.hp}/${p2.maxHp}`);
-  }
-
-  tickEffects(p1, log, n1);
-  tickEffects(p2, log, n2);
-  tickCooldowns(p1);
-  tickCooldowns(p2);
-
-  p1.action = null; p2.action = null;
-  return log;
-}
-
-// ─────────────────────────────────────────────────────────────
-// EFEITOS E COOLDOWNS
-// ─────────────────────────────────────────────────────────────
-
-function tickEffects(p, log, name) {
-  for (const eff of p.effects) {
-    if (eff.type === '🔥 Queimadura') { const d = rand(4,7); p.hp -= d; log.push(`🔥 ${name} queimadura! -${d} HP`); }
-    if (eff.type === '☠️ Veneno')     { const d = rand(5,9); p.hp -= d; log.push(`☠️ ${name} veneno! -${d} HP`); }
-    eff.rounds--;
-  }
-  p.effects = p.effects.filter(e => e.rounds > 0);
-}
-
-function tickCooldowns(p) {
-  for (const k of Object.keys(p.spellCooldowns)) {
-    p.spellCooldowns[k]--;
-    if (p.spellCooldowns[k] <= 0) delete p.spellCooldowns[k];
-  }
-}
-
-// ─────────────────────────────────────────────────────────────
-// FEITIÇOS
-// ─────────────────────────────────────────────────────────────
-
-function processSpell(caster, target, spellId, aName, dName, log) {
-  if (!SPELLS[spellId]) { log.push(`🔮 ${aName} feitiço inválido!`); return; }
-  if (hasEffect(caster, '🔇 Silêncio')) { log.push(`🔇 ${aName} silenciado!`); return; }
-  const spell = SPELLS[spellId];
-  const cost  = Math.max(0, spell.cost - (caster.manaCostReduction || 0));
-  if (caster.mana < cost) { log.push(`🔮 ${aName} sem mana!`); return; }
-  caster.mana -= cost;
-  caster.spellCooldowns[spellId] = spell.cd;
-  const sp = caster.spellPowerBonus || 0;
-
-  switch (spellId) {
-    case 'bola_de_fogo': { const d=rand(20,30)+sp; target.hp-=d; addEffect(target,'🔥 Queimadura',2); log.push(`🔥 ${aName} Bola de Fogo em ${dName}! -${d} HP + Queimadura 2r`); break; }
-    case 'raio':         { const d=rand(25,40)+sp; target.hp-=d; addEffect(target,'⚡ Stun',1);       log.push(`⚡ ${aName} Raio em ${dName}! -${d} HP + Stun 1r`);              break; }
-    case 'gelo':         { const d=rand(15,22)+sp; target.hp-=d; addEffect(target,'🧊 Congelado',2);  log.push(`🧊 ${aName} Gelo em ${dName}! -${d} HP + Congelado 2r`);         break; }
-    case 'veneno':       { const d=rand(8,12)+sp;  target.hp-=d; addEffect(target,'☠️ Veneno',3);     log.push(`☠️ ${aName} Veneno em ${dName}! -${d} HP + Veneno 3r`);          break; }
-    case 'cura':         { const h=rand(30,45)+Math.floor(sp*.5); caster.hp=clamp(caster.hp+h,0,caster.maxHp); log.push(`💚 ${aName} Cura Divina! +${h} HP`); break; }
-    case 'escudo_magico':  addEffect(caster,'🛡️ Escudo Mágico',2,0.7); log.push(`🛡️ ${aName} Escudo Mágico! -70% dano 2r`); break;
-    case 'furia':          addEffect(caster,'😤 Fúria',2);              log.push(`😤 ${aName} Fúria! +10 dano 2r`);           break;
-    case 'fraqueza':       addEffect(target,'💫 Fraqueza',2);            log.push(`💫 ${aName} Fraqueza em ${dName}! -8 dano 2r`); break;
-    case 'silencio':       addEffect(target,'🔇 Silêncio',2);            log.push(`🔇 ${aName} Silencia ${dName}! 2r`);         break;
-    case 'correntes':    { const d=rand(5,10)+sp; target.hp-=d; addEffect(target,'⛓️ Correntes',2); log.push(`⛓️ ${aName} Correntes em ${dName}! -${d} HP + Esquiva bloqueada 2r`); break; }
-  }
-  caster.ultimate = clamp(caster.ultimate + 10, 0, 100);
-}
-
-// ─────────────────────────────────────────────────────────────
-// IA DO BOT
-// ─────────────────────────────────────────────────────────────
-
-function botAction(room, bot, enemy) {
-  const diff      = room.difficulty;
-  const notSilent = !hasEffect(bot, '🔇 Silêncio');
-  const canSpell  = id =>
-    (bot.spellCooldowns[id] || 0) === 0 &&
-    bot.mana >= Math.max(0, (SPELLS[id]?.cost || 99) - (bot.manaCostReduction || 0));
-
-  if (diff === 'easy') {
-    if (bot.hp < 30 && bot.potions > 0) return 'usar item';
-    if (chance(20)) return 'defesa';
-    return chance(70) ? 'ataque leve' : 'esquiva';
-  }
-
-  if (diff === 'hard' || diff === 'ai') {
-    if (bot.hp < 40 && bot.potions > 0) return 'usar item';
-    if (bot.ultimate >= 100) return 'ultimate';
-    if (notSilent && chance(55)) {
-      const avail = ['raio','bola_de_fogo','veneno','correntes','fraqueza','gelo'].filter(canSpell);
-      if (avail.length) return `magia: ${avail[Math.floor(Math.random() * avail.length)]}`;
-    }
-    if (notSilent && bot.hp < 60 && canSpell('cura'))          return 'magia: cura';
-    if (notSilent && bot.hp < 80 && canSpell('escudo_magico')) return 'magia: escudo_magico';
-    if (bot.energy >= 25 && chance(30)) return 'break guard';
-    if (bot.energy >= 15 && chance(50)) return 'ataque pesado';
-    if (chance(15)) return 'contra-ataque';
-    return chance(25) ? 'defesa' : 'ataque leve';
-  }
-
-  // medium
-  if (bot.hp < 35 && bot.potions > 0) return 'usar item';
-  if (bot.ultimate >= 100) return 'ultimate';
-  if (notSilent && bot.hp < 50 && canSpell('cura') && chance(60)) return 'magia: cura';
-  if (notSilent && canSpell('bola_de_fogo') && chance(30))        return 'magia: bola_de_fogo';
-  if (bot.energy >= 15 && chance(40)) return 'ataque pesado';
-  if (chance(20)) return 'defesa';
-  return 'ataque leve';
-}
-
-// ─────────────────────────────────────────────────────────────
-// SANITIZE (o que o cliente recebe)
-// ─────────────────────────────────────────────────────────────
-
-function sanitize(room) {
-  const sp = p => ({
-    hp: Math.max(0, p.hp), maxHp: p.maxHp,
-    mana: Math.max(0, p.mana), maxMana: p.maxMana,
-    energy: Math.max(0, p.energy || 0), maxEnergy: p.maxEnergy,
-    potions: p.potions,
-    effects: p.effects.filter(e => e.rounds > 0),
-    ultimate: clamp(p.ultimate || 0, 0, 100),
-    action: p.action,
-    isBot: p.isBot || false,
-    spellCooldowns: p.spellCooldowns || {},
-    manaCostReduction:  p.manaCostReduction  || 0,
-    dmgBonus:           p.dmgBonus           || 0,
-    dodgeBonus:         p.dodgeBonus         || 0,
-    damageReduction:    p.damageReduction    || 0,
-    regenPerRound:      p.regenPerRound      || 0,
-    spellPowerBonus:    p.spellPowerBonus    || 0,
-    ultimatePowerBonus: p.ultimatePowerBonus || 0,
-  });
-  return {
-    phase: room.phase, round: room.round,
-    isVsBot: room.isVsBot, winner: room.winner,
-    log: room.log.slice(-60),
-    p1: sp(room.p1), p2: sp(room.p2),
-  };
 }
 
 module.exports = { setupRoutes, setupSocket };
