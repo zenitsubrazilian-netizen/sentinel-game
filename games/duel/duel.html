@@ -29,8 +29,7 @@ body{background:var(--bg);color:var(--txt);font-family:system-ui,sans-serif;disp
 .btn{background:var(--card);border:1px solid var(--b);border-radius:10px;color:var(--txt);padding:10px 4px;font-size:11px;font-weight:600;cursor:pointer;text-align:center;transition:transform .1s;line-height:1.4;-webkit-tap-highlight-color:transparent}
 .btn:active{transform:scale(.94);background:#1e1e38}
 .btn.sp{border-color:var(--pur);color:#c4b5fd}.btn.ul{border-color:var(--gold);color:var(--gold)}
-.btn.wa{border-color:#25d366;color:#25d366;font-size:13px;padding:12px 4px}
-.btn.w2{grid-column:span 2}.btn.w3{grid-column:span 3}
+.btn.w3{grid-column:span 3}
 .btn:disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
 .wait{text-align:center;padding:12px;color:var(--mut);font-size:13px;background:var(--card);border-radius:10px;border:1px dashed var(--b)}
 .hidden{display:none!important}
@@ -46,7 +45,6 @@ body{background:var(--bg);color:var(--txt);font-family:system-ui,sans-serif;disp
 .end{text-align:center;padding:30px 16px;margin-top:10px}
 .end-e{font-size:50px;margin-bottom:8px}.end-t{font-size:22px;font-weight:800;margin-bottom:10px}
 .end-s{font-size:13px;color:var(--mut);line-height:2}
-.end-actions{display:flex;flex-direction:column;gap:8px;padding:0 16px 16px}
 #reconn{position:fixed;top:0;left:0;right:0;background:#7c3aed;color:#fff;text-align:center;padding:8px;font-size:12px;font-weight:700;z-index:100;display:none}
 </style>
 </head>
@@ -54,98 +52,95 @@ body{background:var(--bg);color:var(--txt);font-family:system-ui,sans-serif;disp
 
 <div id="reconn">🔄 Reconectando...</div>
 
-<!-- ═══════════════════════════════════════════════════════════
-     ÁUDIO — URLs de CDN direto (não página HTML)
-     ═══════════════════════════════════════════════════════════
-     Troque os src abaixo se necessário pelos links de download
-     direto dos respectivos serviços.
-     ══════════════════════════════════════════════════════════ -->
+<!-- ═══════════════════════════════════════════════════════
+     ÁUDIO — myinstants CDN direto
+     ═══════════════════════════════════════════════════════ -->
 <audio id="snd-click"
-       src="https://www.myinstants.com/media/sounds/leappad3-click-sound.mp3"
+       src="https://www.myinstants.com/media/sounds/minecraft-click-cropped.mp3"
        preload="auto"></audio>
 
 <audio id="snd-bg"
-       src="https://cdn.pixabay.com/audio/2024/11/12/audio_62ce3e1f57.mp3"
+       src="https://www.myinstants.com/media/sounds/doors-elevator-music.mp3"
        preload="auto"
        loop></audio>
 
 <audio id="snd-win"
-       src="https://cdn.pixabay.com/audio/2025/01/08/audio_6b5d16de55.mp3"
+       src="https://www.myinstants.com/media/sounds/end-brawl-stars-win.mp3"
        preload="auto"></audio>
 
 <audio id="snd-lose"
-       src="https://cdn.pixabay.com/audio/2023/10/30/audio_b7c1b7c8f9.mp3"
+       src="https://www.myinstants.com/media/sounds/faith-mortis.mp3"
        preload="auto"></audio>
 
 <div class="wrap">
 
-<div id="loading" style="margin-top:40vh;text-align:center">
-  <div style="font-size:30px">⚔️</div>
-  <div id="loading-msg" style="margin-top:10px;color:var(--mut)">Conectando...</div>
-</div>
-
-<div id="battle" class="hidden">
-  <div class="card" style="flex-direction:row;display:flex;justify-content:space-between;align-items:center;padding:8px 12px">
-    <span style="font-size:13px;font-weight:700">⚔️ DUEL</span>
-    <span id="rbadge" style="background:var(--pur);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">Round 1</span>
-    <span id="rid" style="font-size:10px;opacity:.35"></span>
+  <div id="loading" style="margin-top:40vh;text-align:center">
+    <div style="font-size:30px">⚔️</div>
+    <div id="loading-msg" style="margin-top:10px;color:var(--mut)">Conectando...</div>
   </div>
 
-  <div class="card enemy">
-    <div class="row"><span id="ename">🤖 Sentinel</span><span class="sub" id="eready"></span></div>
-    <div class="blbl"><span>❤️ HP</span><span id="ehp">120/120</span></div>
-    <div class="bar"><div id="ehpb" class="bfill hp" style="width:100%"></div></div>
-    <div class="blbl"><span>🔵 Mana</span><span id="emana">60/60</span></div>
-    <div class="bar"><div id="emanab" class="bfill mana" style="width:100%"></div></div>
-    <div class="srow"><span id="een">⚡ 50</span><span id="epot">🧪 2</span><span id="eult">✨ 0/100</span></div>
-    <div class="efx" id="eefx"></div>
-  </div>
+  <!-- ── TELA DE BATALHA ──────────────────────────────────── -->
+  <div id="battle" class="hidden">
 
-  <div class="log" id="log"><p style="color:var(--mut);text-align:center">⚔️ A batalha começa!</p></div>
+    <div class="card" style="flex-direction:row;display:flex;justify-content:space-between;align-items:center;padding:8px 12px">
+      <span style="font-size:13px;font-weight:700">⚔️ DUEL</span>
+      <span id="rbadge" style="background:var(--pur);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">Round 1</span>
+      <span id="rid" style="font-size:10px;opacity:.35"></span>
+    </div>
 
-  <div class="card me">
-    <div class="row"><span id="myname">👤 Você</span><span class="sub" id="myready"></span></div>
-    <div class="blbl"><span>❤️ HP</span><span id="myhp">120/120</span></div>
-    <div class="bar"><div id="myhpb" class="bfill hp" style="width:100%"></div></div>
-    <div class="blbl"><span>🔵 Mana</span><span id="mymana">60/60</span></div>
-    <div class="bar"><div id="mymanab" class="bfill mana" style="width:100%"></div></div>
-    <div class="blbl"><span>✨ Ultimate</span><span id="myulttxt">0/100</span></div>
-    <div class="bar sm"><div id="myultb" class="bfill ult" style="width:0%"></div></div>
-    <div class="srow"><span id="myen">⚡ 50</span><span id="mypot">🧪 2</span></div>
-    <div class="efx" id="myefx"></div>
-  </div>
+    <div class="card enemy">
+      <div class="row"><span id="ename">🤖 Sentinel</span><span class="sub" id="eready"></span></div>
+      <div class="blbl"><span>❤️ HP</span><span id="ehp">120/120</span></div>
+      <div class="bar"><div id="ehpb" class="bfill hp" style="width:100%"></div></div>
+      <div class="blbl"><span>🔵 Mana</span><span id="emana">60/60</span></div>
+      <div class="bar"><div id="emanab" class="bfill mana" style="width:100%"></div></div>
+      <div class="srow"><span id="een">⚡ 50</span><span id="epot">🧪 2</span><span id="eult">✨ 0/100</span></div>
+      <div class="efx" id="eefx"></div>
+    </div>
 
-  <div id="agrid" class="grid">
-    <button class="btn" onclick="act('ataque leve')">⚔️ Leve<br><small>8-15</small></button>
-    <button class="btn" id="btn-pesado" onclick="act('ataque pesado')">💢 Pesado<br><small>20-32 -15⚡</small></button>
-    <button class="btn" onclick="act('defesa')">🛡️ Defesa<br><small>-50% dano</small></button>
-    <button class="btn" onclick="act('esquiva')">💨 Esquiva<br><small>40% evitar</small></button>
-    <button class="btn" id="btn-contra" onclick="act('contra-ataque')">↩️ Contra<br><small>-20⚡</small></button>
-    <button class="btn" id="btn-break" onclick="act('break guard')">🔨 Break<br><small>-25⚡</small></button>
-    <button class="btn" onclick="act('focus')">🧘 Focus<br><small>+mana ⚡</small></button>
-    <button class="btn" id="btn-pocao" onclick="act('usar item')">🧪 Poção<br><small>+30-45 HP</small></button>
-    <button class="btn ul" id="btn-ult" onclick="act('ultimate')">✨ ULTIMATE<br><small>45-65 dano</small></button>
-    <button class="btn sp w3" onclick="showSp()">🔮 Magia — escolher feitiço</button>
-  </div>
-  <div id="waitmsg" class="wait hidden">⏳ Aguardando oponente...</div>
-</div>
+    <div class="log" id="log"><p style="color:var(--mut);text-align:center">⚔️ A batalha começa!</p></div>
 
-<div id="endscreen" class="hidden">
-  <div class="end">
-    <div class="end-e" id="end-e">🏆</div>
-    <div class="end-t" id="end-t">Vitória!</div>
-    <div class="end-s" id="end-s"></div>
+    <div class="card me">
+      <div class="row"><span id="myname">👤 Você</span><span class="sub" id="myready"></span></div>
+      <div class="blbl"><span>❤️ HP</span><span id="myhp">120/120</span></div>
+      <div class="bar"><div id="myhpb" class="bfill hp" style="width:100%"></div></div>
+      <div class="blbl"><span>🔵 Mana</span><span id="mymana">60/60</span></div>
+      <div class="bar"><div id="mymanab" class="bfill mana" style="width:100%"></div></div>
+      <div class="blbl"><span>✨ Ultimate</span><span id="myulttxt">0/100</span></div>
+      <div class="bar sm"><div id="myultb" class="bfill ult" style="width:0%"></div></div>
+      <div class="srow"><span id="myen">⚡ 50</span><span id="mypot">🧪 2</span></div>
+      <div class="efx" id="myefx"></div>
+    </div>
+
+    <div id="agrid" class="grid">
+      <button class="btn" onclick="act('ataque leve')">⚔️ Leve<br><small>8-15</small></button>
+      <button class="btn" id="btn-pesado" onclick="act('ataque pesado')">💢 Pesado<br><small>20-32 -15⚡</small></button>
+      <button class="btn" onclick="act('defesa')">🛡️ Defesa<br><small>-50% dano</small></button>
+      <button class="btn" onclick="act('esquiva')">💨 Esquiva<br><small>40% evitar</small></button>
+      <button class="btn" id="btn-contra" onclick="act('contra-ataque')">↩️ Contra<br><small>-20⚡</small></button>
+      <button class="btn" id="btn-break" onclick="act('break guard')">🔨 Break<br><small>-25⚡</small></button>
+      <button class="btn" onclick="act('focus')">🧘 Focus<br><small>+mana ⚡</small></button>
+      <button class="btn" id="btn-pocao" onclick="act('usar item')">🧪 Poção<br><small>+30-45 HP</small></button>
+      <button class="btn ul" id="btn-ult" onclick="act('ultimate')">✨ ULTIMATE<br><small>45-65 dano</small></button>
+      <button class="btn sp w3" onclick="showSp()">🔮 Magia — escolher feitiço</button>
+    </div>
+    <div id="waitmsg" class="wait hidden">⏳ Aguardando oponente...</div>
+
+  </div><!-- /#battle -->
+
+  <!-- ── TELA FINAL ────────────────────────────────────────── -->
+  <div id="endscreen" class="hidden">
+    <div class="end">
+      <div class="end-e" id="end-e">🏆</div>
+      <div class="end-t" id="end-t">Vitória!</div>
+      <div class="end-s" id="end-s"></div>
+    </div>
+    <div class="log" id="end-log" style="max-height:300px"></div>
   </div>
-  <div class="log" id="end-log" style="max-height:280px"></div>
-  <div class="end-actions">
-    <button class="btn wa w3" onclick="openWhatsApp()">
-      💬 Voltar ao WhatsApp
-    </button>
-  </div>
-</div>
 
 </div><!-- /.wrap -->
 
+<!-- ── PAINEL DE MAGIAS ─────────────────────────────────────── -->
 <div id="spov" class="ov hidden">
   <div class="sp-panel">
     <div class="sp-title">🔮 Escolher Magia</div>
@@ -161,31 +156,26 @@ body{background:var(--bg);color:var(--txt);font-family:system-ui,sans-serif;disp
 // ═══════════════════════════════════════════════════════════
 
 const Audio = (() => {
-  // Referências
   const _click = document.getElementById('snd-click');
   const _bg    = document.getElementById('snd-bg');
   const _win   = document.getElementById('snd-win');
   const _lose  = document.getElementById('snd-lose');
 
-  // Volume padrão
-  if (_bg)   _bg.volume   = 0.35;
-  if (_win)  _win.volume  = 0.75;
-  if (_lose) _lose.volume = 0.75;
-  if (_click) _click.volume = 0.5;
+  // Volumes
+  if (_bg)    _bg.volume    = 0.35;
+  if (_win)   _win.volume   = 0.80;
+  if (_lose)  _lose.volume  = 0.80;
+  if (_click) _click.volume = 0.55;
 
-  // Guarda se a música de fundo já está tocando
-  let _bgPlaying  = false;
-  // Guarda se o som de fim já foi tocado (evita duplicação)
-  let _endPlayed  = false;
+  let _bgPlaying = false;
+  let _endPlayed = false;
 
-  // Tenta reproduzir — ignora erro de autoplay silenciosamente
   function _play(el) {
     if (!el) return;
     const p = el.play();
     if (p && typeof p.catch === 'function') p.catch(() => {});
   }
 
-  // Para e reseta um elemento de áudio
   function _stop(el) {
     if (!el) return;
     el.pause();
@@ -193,14 +183,14 @@ const Audio = (() => {
   }
 
   return {
-    // Clique nos botões — reinicia para tocar mesmo se clicado rápido
+    // Clique nos botões — reinicia o sample para resposta imediata
     click() {
       if (!_click) return;
       _click.currentTime = 0;
       _play(_click);
     },
 
-    // Inicia a música de fundo em loop
+    // Inicia a música de fundo em loop (só executa uma vez por sessão)
     startBg() {
       if (_bgPlaying || !_bg) return;
       _bg.currentTime = 0;
@@ -208,45 +198,39 @@ const Audio = (() => {
       _bgPlaying = true;
     },
 
-    // Para a música de fundo imediatamente
+    // Para a música imediatamente
     stopBg() {
       if (!_bg) return;
       _stop(_bg);
       _bgPlaying = false;
     },
 
-    // Toca vitória ou derrota uma única vez e para a música
+    // Toca vitória ou derrota uma única vez e para a música de fundo
     playEnd(won) {
       if (_endPlayed) return;
       _endPlayed = true;
       this.stopBg();
-      if (won) _play(_win);
-      else     _play(_lose);
+      _play(won ? _win : _lose);
     },
 
-    // Reset completo (útil se a página for reutilizada)
-    reset() {
-      _endPlayed = false;
-      _bgPlaying = false;
-      _stop(_bg);
-      _stop(_win);
-      _stop(_lose);
+    // Empate: apenas para a música (sem fanfarra)
+    playDraw() {
+      if (_endPlayed) return;
+      _endPlayed = true;
+      this.stopBg();
     },
   };
 })();
 
-// ═══════════════════════════════════════════════════════════
-// APLICA SOM DE CLIQUE EM TODOS OS BOTÕES (incluindo futuros)
-// ═══════════════════════════════════════════════════════════
-
-// Delegação: captura cliques em qualquer .btn dentro do documento
+// ── Delegação de clique para TODOS os botões interativos ─────
+// Cobre: .btn, .scard e .cls-btn, incluindo os criados dinamicamente
 document.addEventListener('click', e => {
   const btn = e.target.closest('.btn, .scard, .cls-btn');
   if (btn && !btn.disabled) Audio.click();
 }, true);
 
 // ═══════════════════════════════════════════════════════════
-// DADOS DOS FEITIÇOS (exibição no painel)
+// DADOS DOS FEITIÇOS
 // ═══════════════════════════════════════════════════════════
 
 const SP_DATA = {
@@ -286,10 +270,9 @@ const socket = io("https://sentinel-game-3.onrender.com", {
   reconnectionAttempts: 10,
 });
 
-let state      = null;
-let sent       = false;
-// Controla se a música já foi iniciada (evita reiniciar a cada state)
-let bgStarted  = false;
+let state     = null;
+let sent      = false;
+let bgStarted = false; // garante que startBg() só é chamado uma vez
 
 socket.on('connect', () => {
   document.getElementById('reconn').style.display = 'none';
@@ -307,9 +290,9 @@ socket.on('reconnect_failed', () => {
 });
 socket.on('state', s => { state = s; render(); });
 socket.on('error', msg => {
-  const el = document.getElementById('loading-msg');
-  el.textContent = `⚠️ ${msg}`;
-  el.style.color = '#ef4444';
+  const msgEl = document.getElementById('loading-msg');
+  msgEl.textContent = `⚠️ ${msg}`;
+  msgEl.style.color = '#ef4444';
 });
 
 // ═══════════════════════════════════════════════════════════
@@ -321,21 +304,16 @@ const esc = s  => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/
 const pct = (v, m) => (Math.max(0, v) / Math.max(1, m) * 100).toFixed(1) + '%';
 
 // ═══════════════════════════════════════════════════════════
-// RENDER
+// RENDER PRINCIPAL
 // ═══════════════════════════════════════════════════════════
 
 function render() {
   if (!state) return;
   el('loading').classList.add('hidden');
 
-  // ── FIM DA PARTIDA ──────────────────────────────────────
-  if (state.phase === 'ended') {
-    renderEnd();
-    return;
-  }
+  if (state.phase === 'ended') { renderEnd(); return; }
 
-  // ── PARTIDA EM ANDAMENTO ────────────────────────────────
-  // Inicia a música de fundo apenas uma vez
+  // Inicia música de fundo assim que a batalha começa
   if (!bgStarted) {
     bgStarted = true;
     Audio.startBg();
@@ -347,12 +325,10 @@ function render() {
 
   const me = state[PLAYER];
   const en = state[ENEMY];
-
   if (!me || !en) return;
 
-  el('ename').textContent = en.isBot ? '🤖 Sentinel' : '👤 Oponente';
-
-  // Inimigo
+  // ── Inimigo
+  el('ename').textContent  = en.isBot ? '🤖 Sentinel' : '👤 Oponente';
   el('ehp').textContent    = `${Math.max(0, en.hp)}/${en.maxHp}`;
   el('ehpb').style.width   = pct(en.hp, en.maxHp);
   el('emana').textContent  = `${Math.max(0, en.mana)}/${en.maxMana}`;
@@ -363,7 +339,7 @@ function render() {
   el('eefx').textContent   = (en.effects || []).map(e => e.type).join(' ') || '';
   el('eready').textContent = en.action ? '✅' : '';
 
-  // Jogador
+  // ── Jogador
   el('myhp').textContent     = `${Math.max(0, me.hp)}/${me.maxHp}`;
   el('myhpb').style.width    = pct(me.hp, me.maxHp);
   el('mymana').textContent   = `${Math.max(0, me.mana)}/${me.maxMana}`;
@@ -375,6 +351,7 @@ function render() {
   el('myefx').textContent    = (me.effects || []).map(e => e.type).join(' ') || '';
   el('myready').textContent  = me.action ? '✅ aguardando...' : '';
 
+  // ── Estado dos botões de energia/recurso
   el('btn-pesado').disabled = (me.energy || 0) < 15;
   el('btn-contra').disabled = (me.energy || 0) < 20;
   el('btn-break').disabled  = (me.energy || 0) < 25;
@@ -382,10 +359,11 @@ function render() {
   el('btn-ult').disabled    = (me.ultimate || 0) < 100;
 
   const acted = me.action !== null && me.action !== undefined;
-  el('agrid').classList.toggle('hidden', acted);
+  el('agrid').classList.toggle('hidden',  acted);
   el('waitmsg').classList.toggle('hidden', !acted);
   if (!acted) sent = false;
 
+  // ── Log de combate
   const logEl = el('log');
   if (state.log?.length) {
     logEl.innerHTML = state.log.slice(-50)
@@ -406,19 +384,17 @@ function renderEnd() {
   el('endscreen').classList.remove('hidden');
 
   const me = state[PLAYER];
-  let playerWon = false;
 
   if (state.winner === 'draw') {
     el('end-e').textContent = '🤝';
     el('end-t').textContent = 'EMPATE!';
-    el('end-s').textContent = 'Ambos caíram!';
-    // Empate: não toca nem vitória nem derrota — apenas para a música
-    Audio.stopBg();
+    el('end-s').textContent = 'Ambos caíram ao mesmo tempo!';
+    Audio.playDraw();
   } else if (state.winner === PLAYER) {
-    playerWon = true;
     el('end-e').textContent = '🏆';
     el('end-t').textContent = 'VITÓRIA!';
-    el('end-s').innerHTML   = `❤️ HP restante: ${Math.max(0, me?.hp || 0)}/${me?.maxHp || 120}<br>🎉 +100 XP`;
+    el('end-s').innerHTML   =
+      `❤️ HP restante: ${Math.max(0, me?.hp || 0)}/${me?.maxHp || 120}<br>🎉 +100 XP`;
     Audio.playEnd(true);
   } else {
     el('end-e').textContent = '💀';
@@ -428,11 +404,12 @@ function renderEnd() {
   }
 
   if (state.log?.length)
-    el('end-log').innerHTML = state.log.slice(-60).map(l => `<p>${esc(l)}</p>`).join('');
+    el('end-log').innerHTML = state.log.slice(-60)
+      .map(l => `<p>${esc(l)}</p>`).join('');
 }
 
 // ═══════════════════════════════════════════════════════════
-// AÇÕES
+// AÇÕES DO JOGADOR
 // ═══════════════════════════════════════════════════════════
 
 window.act = action => {
@@ -441,6 +418,7 @@ window.act = action => {
   socket.emit('action', { roomId: ROOM, player: PLAYER, action });
 };
 
+// ── Painel de magias
 window.showSp = () => {
   const me = state?.[PLAYER];
   if (!me || state?.phase !== 'fighting' || sent) return;
@@ -449,9 +427,9 @@ window.showSp = () => {
   grid.innerHTML = '';
 
   for (const [id, s] of Object.entries(SP_DATA)) {
-    const cost   = Math.max(0, s.cost - (me.manaCostReduction || 0));
-    const cdLeft = (me.spellCooldowns || {})[id] || 0;
-    const noMana = (me.mana || 0) < cost;
+    const cost     = Math.max(0, s.cost - (me.manaCostReduction || 0));
+    const cdLeft   = (me.spellCooldowns || {})[id] || 0;
+    const noMana   = (me.mana || 0) < cost;
     const disabled = cdLeft > 0 || noMana;
 
     const d = document.createElement('div');
@@ -476,20 +454,10 @@ window.showSp = () => {
 
 window.hideSp = () => el('spov').classList.add('hidden');
 
+// Fecha o painel ao clicar fora dele
 el('spov').addEventListener('click', e => {
   if (e.target === el('spov')) hideSp();
 });
-
-// ─── WhatsApp redirect ────────────────────────────────────────
-window.openWhatsApp = function() {
-  const ua = navigator.userAgent.toLowerCase();
-  const isMobile = /android|iphone|ipad|ipod/.test(ua);
-  if (isMobile) {
-    window.location.href = 'whatsapp://';
-  } else {
-    window.open('https://web.whatsapp.com', '_blank');
-  }
-};
 </script>
 </body>
 </html>
