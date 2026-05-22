@@ -85,7 +85,7 @@ canvas{display:block;touch-action:none}
   <div class="lcard"><h3>🥷 Escolha seu Personagem</h3><div class="chars" id="char-select"></div></div>
   <div class="lcard" id="skin-card"><h3>🎨 Cor / Skin</h3><div class="skins" id="skin-select"></div></div>
   <button id="ready-btn">⚔️ PRONTO PARA DUELAR</button>
-  <div id="status-msg">Aguardando conexão...</div>
+  <div id="status-msg">Conectando...</div>
 </div>
 
 <canvas id="gc" style="display:none"></canvas>
@@ -221,6 +221,7 @@ let bgCanvas    = null;   // fundo pré-renderizado (offscreen)
 function rebuildCache() {
   const W = canvas.width;
   const H = canvas.height;
+  if (!W || !H || W < 10 || H < 10) return; // canvas ainda não inicializado
 
   // Gradiente do fundo
   bgGrad = ctx.createLinearGradient(0, 0, 0, H);
@@ -453,6 +454,8 @@ document.getElementById('ready-btn').addEventListener('click', () => {
 const socket = io({ reconnectionDelay:1500, reconnectionAttempts:15 });
 
 socket.on('connect', () => {
+  // Redesenha thumbnails do lobby (garante visibilidade das cores)
+  setTimeout(redrawThumbs, 100);
   document.getElementById('reconn').style.display = 'none';
   document.getElementById('status-msg').textContent = '✅ Conectado! Configure e clique em Pronto.';
   socket.emit('join_2d', { roomId:ROOM, slot:PSLOT });

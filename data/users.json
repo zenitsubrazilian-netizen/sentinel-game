@@ -1459,7 +1459,7 @@
   "45776382218384@lid": {
     "xp": 1779,
     "level": 8,
-    "coins": 35,
+    "coins": 124,
     "streak": 0,
     "lastDaily": 1779483072887,
     "lastWeekly": 1779210938939,
@@ -1494,7 +1494,7 @@
     "stats": {
       "totalXP": 8405,
       "totalMessages": 86,
-      "totalCoins": 31113,
+      "totalCoins": 31237,
       "minigamesWon": 22,
       "eventsWon": 0,
       "dailyClaimed": 4,
@@ -1518,9 +1518,9 @@
       "cooldownPunitivoAte": 1779397508803
     },
     "lastTrabalhar": 1779483054557,
-    "lastCrime": 1779483006528,
+    "lastCrime": 1779487491664,
     "lastPescar": 1779483044616,
-    "lastMinerar": 1779483035185
+    "lastMinerar": 1779487513916
   },
   "40815460143216@lid": {
     "xp": 231,

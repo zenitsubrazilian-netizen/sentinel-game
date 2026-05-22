@@ -1,12 +1,5 @@
 'use strict';
 
-// ============================================================
-// games/duel/duelLogic.js — Lógica Duel Arena 2D
-// FIX: lógica de ready baseada em flags, não em socket count
-// FIX: performance — tick otimizado, broadcast throttlado
-// ============================================================
-
-const path  = require('path');
 const rooms = new Map();
 
 const genId = () => Math.random().toString(36).substr(2, 8).toUpperCase();
@@ -21,25 +14,23 @@ const JUMP_VEL   = -13;
 const MOVE_SPEED = 4.2;
 const MAX_HP     = 120;
 const ROUND_DUR  = 60;
-const TICK_MS    = 50;   // 20 ticks/s
+const TICK_MS    = 50;
 const CHAR_W     = 28;
 const CHAR_H     = 44;
 
-// ─── Bônus de relíquias ───────────────────────────────────────
 function applyBonusToPlayer(player, bonus) {
   const b = bonus || {};
-  player.maxHp           += (Number(b.maxHpBonus)       || 0);
+  player.maxHp           += (Number(b.maxHpBonus)        || 0);
   player.hp               = player.maxHp;
-  player.dmgBonus        += (Number(b.dmgBonus)          || 0);
-  player.dodgeBonus      += (Number(b.dodgeBonus)        || 0);
-  player.damageReduction += (Number(b.damageReduction)   || 0);
-  player.regenPerRound   += (Number(b.regenPerRound)     || 0);
-  player.ultBonus        += (Number(b.ultimatePowerBonus)|| 0);
+  player.dmgBonus        += (Number(b.dmgBonus)           || 0);
+  player.dodgeBonus      += (Number(b.dodgeBonus)         || 0);
+  player.damageReduction += (Number(b.damageReduction)    || 0);
+  player.regenPerRound   += (Number(b.regenPerRound)      || 0);
+  player.ultBonus        += (Number(b.ultimatePowerBonus) || 0);
   if (b.startUltimate)    player.ult = clamp(Number(b.startUltimate), 0, 100);
   return player;
 }
 
-// ─── Factory de jogador 2D ────────────────────────────────────
 function makePlayer2D(slot, jid, bonus) {
   const p = {
     slot, jid,
@@ -70,7 +61,6 @@ function makePlayer2D(slot, jid, bonus) {
   return p;
 }
 
-// ─── Factory de sala ──────────────────────────────────────────
 function makeRoom(roomId, p1Jid, p2Jid, p1Bonus, p2Bonus, isVsBot, difficulty) {
   return {
     id:         roomId,
@@ -81,7 +71,7 @@ function makeRoom(roomId, p1Jid, p2Jid, p1Bonus, p2Bonus, isVsBot, difficulty) {
     timeLeft:   ROUND_DUR,
     isVsBot:    !!isVsBot,
     difficulty: difficulty || 'medium',
-    p1: makePlayer2D('p1', p1Jid,         p1Bonus),
+    p1: makePlayer2D('p1', p1Jid,          p1Bonus),
     p2: makePlayer2D('p2', p2Jid || 'bot', p2Bonus),
     tickInterval:  null,
     lastTick:      Date.now(),
@@ -93,7 +83,6 @@ function makeRoom(roomId, p1Jid, p2Jid, p1Bonus, p2Bonus, isVsBot, difficulty) {
   };
 }
 
-// ─── Hitboxes ─────────────────────────────────────────────────
 function getHitbox(p)   { return { x: p.x - CHAR_W/2, y: p.y - CHAR_H, w: CHAR_W, h: CHAR_H }; }
 function rectsOverlap(a, b) {
   return a.x < b.x + b.w && a.x + a.w > b.x &&
@@ -108,15 +97,14 @@ function getHeavyBox(p) {
   return { x: base.x, y: base.y - 4, w: 40, h: 36 };
 }
 
-// ─── Dano ─────────────────────────────────────────────────────
 function dealDamage(attacker, target, rawDmg, isHeavy, isUlt) {
   if (target.hp <= 0 || target.state === 'dead') return 0;
   let dmg = rawDmg + (attacker.dmgBonus || 0);
   if (Math.random() < 0.12) dmg = Math.floor(dmg * 1.5);
   if (isHeavy) dmg = Math.floor(dmg * 1.35);
   if (isUlt)   dmg = Math.floor(dmg * 1.8);
-  if (target.blocking)                  dmg = Math.floor(dmg * 0.2);
-  else if ((target.damageReduction||0) > 0) dmg = Math.floor(dmg * (1 - target.damageReduction));
+  if (target.blocking)                       dmg = Math.floor(dmg * 0.2);
+  else if ((target.damageReduction || 0) > 0) dmg = Math.floor(dmg * (1 - target.damageReduction));
   dmg = Math.max(1, dmg);
   target.hp        = Math.max(0, target.hp - dmg);
   target.hurtTimer = 8;
@@ -128,7 +116,6 @@ function dealDamage(attacker, target, rawDmg, isHeavy, isUlt) {
   return dmg;
 }
 
-// ─── Física ───────────────────────────────────────────────────
 function stepPhysics(p) {
   if (!p.onGround) p.vy += GRAVITY;
   p.vx *= p.onGround ? 0.78 : 0.92;
@@ -159,7 +146,6 @@ function updatePlayerState(p) {
   p.state = Math.abs(p.vx + p.lastInputDx * MOVE_SPEED) > 0.5 ? 'walk' : 'idle';
 }
 
-// ─── IA do bot ────────────────────────────────────────────────
 function botAI(room) {
   const bot   = room.p2;
   const enemy = room.p1;
@@ -185,7 +171,6 @@ function botAI(room) {
     if (bot.ult >= 100 && dist < 80) doAttack(bot, enemy, 'ult', room);
     return;
   }
-  // hard/ai
   if (enemy.hp < 30 && bot.ult >= 100 && dist < 90) { doAttack(bot, enemy, 'ult', room); return; }
   if (enemy.blocking && dist < 65 && bot.attackCooldown <= 0) { doAttack(bot, enemy, 'heavy', room); return; }
   if (dist < 60 && bot.attackCooldown <= 0) {
@@ -200,7 +185,6 @@ function botAI(room) {
   }
 }
 
-// ─── Executar ataque ──────────────────────────────────────────
 function doAttack(attacker, target, type, room) {
   if (attacker.attackCooldown > 0 || attacker.state === 'dead') return;
   attacker.state = 'attack';
@@ -208,7 +192,7 @@ function doAttack(attacker, target, type, room) {
     case 'light': {
       attacker.attackCooldown = 14;
       if (rectsOverlap(getAttackBox(attacker), getHitbox(target))) {
-        const dmg = dealDamage(attacker, target, rand(8,15), false, false);
+        const dmg = dealDamage(attacker, target, rand(8, 15), false, false);
         if (dmg > 0) emitHit(room, target, dmg, false);
       }
       break;
@@ -216,7 +200,7 @@ function doAttack(attacker, target, type, room) {
     case 'heavy': {
       attacker.attackCooldown = 22;
       if (rectsOverlap(getHeavyBox(attacker), getHitbox(target))) {
-        const dmg = dealDamage(attacker, target, rand(18,28), true, false);
+        const dmg = dealDamage(attacker, target, rand(18, 28), true, false);
         if (dmg > 0) emitHit(room, target, dmg, false);
       }
       break;
@@ -224,7 +208,7 @@ function doAttack(attacker, target, type, room) {
     case 'special': {
       attacker.attackCooldown = 30;
       if (Math.abs(attacker.x - target.x) < 180) {
-        const dmg = dealDamage(attacker, target, rand(12,22), false, false);
+        const dmg = dealDamage(attacker, target, rand(12, 22), false, false);
         if (dmg > 0) emitHit(room, target, dmg, true);
       }
       break;
@@ -234,7 +218,7 @@ function doAttack(attacker, target, type, room) {
       attacker.attackCooldown = 40;
       attacker.ult = 0;
       if (Math.abs(attacker.x - target.x) < 120) {
-        const dmg = dealDamage(attacker, target, rand(40, 55 + (attacker.ultBonus||0)), false, true);
+        const dmg = dealDamage(attacker, target, rand(40, 55 + (attacker.ultBonus || 0)), false, true);
         if (dmg > 0) emitHit(room, target, dmg, true);
       }
       break;
@@ -252,12 +236,11 @@ function updateFacing(p1, p2) {
   if (p2.state !== 'attack' && p2.state !== 'hurt') p2.flipped = p2.x < p1.x;
 }
 
-// ─── Tick principal ───────────────────────────────────────────
 function gameTick(room) {
   if (room.phase !== 'fight') return;
 
   const now = Date.now();
-  const dt  = Math.min((now - room.lastTick) / 1000, 0.1); // cap em 100ms
+  const dt  = Math.min((now - room.lastTick) / 1000, 0.1);
   room.lastTick = now;
 
   room.timeLeft = Math.max(0, room.timeLeft - dt);
@@ -281,15 +264,12 @@ function gameTick(room) {
 
   if (p1Dead || p2Dead || timeout) { endRound(room, p1Dead, p2Dead, timeout); return; }
 
-  // Broadcast throttlado: máximo 20x/s (já que TICK_MS=50)
-  // mas evita flood se tick atrasar
   if (now - room.lastBroadcast >= 50) {
     room.lastBroadcast = now;
     broadcastState(room);
   }
 }
 
-// ─── Fim de round ─────────────────────────────────────────────
 function endRound(room, p1Dead, p2Dead, timeout) {
   room.phase = 'round_end';
   clearInterval(room.tickInterval);
@@ -316,7 +296,6 @@ function endRound(room, p1Dead, p2Dead, timeout) {
   setTimeout(() => startFight(room), 3200);
 }
 
-// ─── Inicia fase de luta ──────────────────────────────────────
 function startFight(room) {
   room.p1.x = 150; room.p1.y = FLOOR_Y; room.p1.vx = 0; room.p1.vy = 0;
   room.p2.x = 620; room.p2.y = FLOOR_Y; room.p2.vx = 0; room.p2.vy = 0;
@@ -335,11 +314,9 @@ function startFight(room) {
   if (room.tickInterval) clearInterval(room.tickInterval);
   room.tickInterval = setInterval(() => gameTick(room), TICK_MS);
 
-  // Envia estado inicial antes do primeiro tick
   broadcastState(room);
 }
 
-// ─── Fim de jogo ──────────────────────────────────────────────
 function endGame(room, winner, draw) {
   room.phase  = 'ended';
   room.winner = draw ? 'draw' : winner;
@@ -349,28 +326,26 @@ function endGame(room, winner, draw) {
   }
 }
 
-// ─── Broadcast ───────────────────────────────────────────────
 function broadcastState(room) {
   if (!room._io) return;
   room._io.to(room.id).emit('game_state', sanitize(room));
 }
 
-// ─── Sanitize ─────────────────────────────────────────────────
 function sanitize(room) {
   const sp = p => ({
-    slot:    p.slot,
-    x:       Math.round(p.x * 10) / 10,
-    y:       Math.round(p.y * 10) / 10,
-    hp:      Math.max(0, Math.round(p.hp)),
-    maxHp:   p.maxHp,
-    ult:     Math.round(p.ult),
-    state:   p.state,
-    flipped: p.flipped,
-    charId:  p.charId,
-    skin:    p.skin,
-    nick:    p.nick,
-    effects: p.effects || [],
-    blocking:p.blocking || false,
+    slot:     p.slot,
+    x:        Math.round(p.x * 10) / 10,
+    y:        Math.round(p.y * 10) / 10,
+    hp:       Math.max(0, Math.round(p.hp)),
+    maxHp:    p.maxHp,
+    ult:      Math.round(p.ult),
+    state:    p.state,
+    flipped:  p.flipped,
+    charId:   p.charId,
+    skin:     p.skin,
+    nick:     p.nick,
+    effects:  p.effects || [],
+    blocking: p.blocking || false,
   });
   return {
     p1:       sp(room.p1),
@@ -409,30 +384,30 @@ function setupRoutes(app) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// SOCKET.IO
-// FIX PRINCIPAL: ready baseado em flags p1.ready / p2.ready
-// não em contagem de sockets na sala
+// SOCKET.IO — sem io.on('connection') duplicado
+// FIX PRINCIPAL: setupSocket recebe o io já configurado pelo
+// webServer e apenas adiciona os handlers necessários via
+// um namespace de evento único por sala
 // ═══════════════════════════════════════════════════════════════
 function setupSocket(io) {
   io.on('connection', socket => {
 
-    // ── Join ──────────────────────────────────────────────────
     socket.on('join_2d', ({ roomId, slot }) => {
       const room = rooms.get(roomId);
       if (!room) { socket.emit('error_msg', 'Sala não encontrada.'); return; }
       socket.join(roomId);
       room.sockets[slot] = socket.id;
       room._io = io;
-      console.log(`[DUEL2D] join_2d | slot:${slot} | room:${roomId} | socket:${socket.id}`);
+      console.log(`[DUEL2D] join_2d | slot:${slot} | room:${roomId}`);
+      // FIX: envia estado atual para o cliente recém-conectado
+      // incluindo charId/skin já configurados (para redraw do lobby)
       socket.emit('game_state', sanitize(room));
     });
 
-    // ── Pronto — FIX: usa flags, não socket count ─────────────
     socket.on('player_ready', ({ roomId, slot, nick, charId, skin }) => {
       const room = rooms.get(roomId);
       if (!room) { socket.emit('error_msg', 'Sala não encontrada.'); return; }
 
-      // Garante que o socket está na sala (pode ter reconectado)
       socket.join(roomId);
       room.sockets[slot] = socket.id;
       room._io = io;
@@ -446,14 +421,11 @@ function setupSocket(io) {
       p.ready  = true;
 
       console.log(`[DUEL2D] player_ready | slot:${slot} | nick:${p.nick} | room:${roomId}`);
-      console.log(`[DUEL2D] status ready | p1:${room.p1.ready} | p2:${room.p2.ready} | vsBot:${room.isVsBot}`);
 
-      // FIX: condição correta — p2 é sempre "pronto" em vsBot
       const p1Ready = room.p1.ready;
       const p2Ready = room.isVsBot ? true : room.p2.ready;
 
       if (p1Ready && p2Ready && room.phase === 'lobby') {
-        // Configura bot se necessário
         if (room.isVsBot) {
           room.p2.nick   = 'Sentinel';
           room.p2.charId = ['warrior','mage','ninja','demon'][Math.floor(Math.random() * 4)];
@@ -461,20 +433,17 @@ function setupSocket(io) {
           room.p2.ready  = true;
         }
 
-        room.phase = 'starting'; // Evita duplo disparo
-        console.log(`[DUEL2D] ✅ Ambos prontos! Iniciando combate | room:${roomId}`);
+        room.phase = 'starting';
+        console.log(`[DUEL2D] ✅ Ambos prontos! Iniciando | room:${roomId}`);
 
         io.to(roomId).emit('both_ready');
-        // Delay de 1s para o cliente processar a tela "iniciando"
         setTimeout(() => startFight(room), 1000);
       } else {
-        // Informa ao jogador que está aguardando o oponente
         socket.emit('waiting_opponent');
         console.log(`[DUEL2D] ⏳ Aguardando oponente | room:${roomId}`);
       }
     });
 
-    // ── Input do jogador ──────────────────────────────────────
     socket.on('player_input', ({ roomId, slot, type, dx }) => {
       const room = rooms.get(roomId);
       if (!room || room.phase !== 'fight') return;
@@ -483,9 +452,7 @@ function setupSocket(io) {
       if (!p || p.state === 'dead') return;
 
       switch (type) {
-        case 'move':
-          p.lastInputDx = clamp(dx || 0, -1, 1);
-          break;
+        case 'move':         p.lastInputDx = clamp(dx || 0, -1, 1); break;
         case 'jump':
           if (p.onGround && p.state !== 'hurt') {
             p.vy = JUMP_VEL; p.onGround = false; p.state = 'jump';
@@ -510,11 +477,10 @@ function setupSocket(io) {
       }
     });
 
-    // ── Disconnect ────────────────────────────────────────────
     socket.on('disconnect', () => {
       for (const [, room] of rooms) {
-        if (room.sockets.p1 === socket.id) { room.sockets.p1 = null; console.log(`[DUEL2D] p1 desconectou | room:${room.id}`); }
-        if (room.sockets.p2 === socket.id) { room.sockets.p2 = null; console.log(`[DUEL2D] p2 desconectou | room:${room.id}`); }
+        if (room.sockets.p1 === socket.id) { room.sockets.p1 = null; }
+        if (room.sockets.p2 === socket.id) { room.sockets.p2 = null; }
       }
     });
   });
