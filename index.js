@@ -21,7 +21,6 @@ const { handleMessage } = require('./handler.js');
 const { handleConnectionUpdate } = require('./events/connection.js');
 const { handleGroupUpdate } = require('./events/groupUpdate.js');
 const { handleWelcome } = require('./events/welcomeHandler.js');
-const { registerSock, startScheduler } = require('./utils/groupScheduler.js');
 const { startInviteReminder } = require('./utils/inviteReminder.js');
 const { startMuteMonitor }    = require('./utils/muteMonitor.js');
 const { saveDB } = require('./utils/economy.js');
@@ -397,7 +396,6 @@ console.log('║     Sistema de Gamificação Ativo   ║');
 console.log('╚════════════════════════════════════╝');
 console.log('');
 
-registerSock(() => wsock);
 
 startBot().catch(error => {
   console.error('[CRÍTICO] Falha ao iniciar:', error.message);

@@ -14,7 +14,7 @@ module.exports = {
     setAfk(sender, reason, senderName);
 
     await sock.sendMessage(from, {
-      text: `Estado ausente ativado.\n*Motivo:* ${motivo}\nVou avisar quem te menciona :)`,
+      text: `Estado ausente ativado.\n*Motivo:* ${motivo}\n\`Vou avisar quem te menciona :)\``,
     });
   },
 };

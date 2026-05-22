@@ -1,16 +1,13 @@
 'use strict';
 
 // ============================================================
-// AI HANDLER — Ativação exclusiva por !sentinel v2.1.0
-// BUG FIX: getRecentMessages não existe em groupMemory.js
-//          substituído por getGroupContext
+// AI HANDLER — v2.2.0
+// Ativação por !sentinel ou autoRespond (grupo 🤖 BOT)
 // ============================================================
 
 const { askGroq, popLastUserMessage } = require('../utils/ai.js');
 const { selectModels, recordSuccess, recordFailure } = require('../utils/router.js');
-const { getGroupContext,
-  captureBotMessage
-} = require('../utils/groupMemory.js');
+const { getGroupContext, captureBotMessage } = require('../utils/groupMemory.js');
 
 // ─────────────────────────────────────────────────────────────
 // CONFIGURAÇÃO
@@ -29,7 +26,11 @@ function shouldActivate(body) {
   return body.toLowerCase().trimStart().startsWith(AI_PREFIX);
 }
 
-function extractQuery(body) {
+function extractQuery(body, autoRespond) {
+  // Modo auto: usa o body inteiro como query
+  if (autoRespond) return body.trim();
+
+  // Modo normal: remove o prefixo !sentinel
   return body.slice(body.toLowerCase().indexOf(AI_PREFIX) + AI_PREFIX.length).trim();
 }
 
@@ -51,19 +52,27 @@ function buildGroupContext(groupId) {
 
 // ─────────────────────────────────────────────────────────────
 // HANDLER PRINCIPAL
+//
+// @param autoRespond {boolean} — quando true, responde qualquer
+//   mensagem sem precisar do prefixo !sentinel (grupo 🤖 BOT)
 // ─────────────────────────────────────────────────────────────
 
-async function handleAIMessage(sock, message, from, sender, body, senderNum) {
-  if (!shouldActivate(body)) return false;
+async function handleAIMessage(sock, message, from, sender, body, senderNum, autoRespond = false) {
+  // Decide se deve ativar
+  const activated = autoRespond || shouldActivate(body);
+  if (!activated) return false;
 
-  const query = extractQuery(body);
+  const query = extractQuery(body, autoRespond);
 
   if (!query) {
-    await sock.sendMessage(from, { text: MSG_EMPTY_QUERY });
-    return true;
+    // Só avisa sobre query vazia se foi chamado via !sentinel
+    if (!autoRespond) {
+      await sock.sendMessage(from, { text: MSG_EMPTY_QUERY });
+    }
+    return autoRespond; // no modo auto, consome a mensagem sem responder
   }
 
-  console.log(`[AI] Ativado por ${senderNum} | "${query.slice(0, 60)}"`);
+  console.log(`[AI] Ativado por ${senderNum}${autoRespond ? ' (auto)' : ''} | "${query.slice(0, 60)}"`);
 
   const extraContext    = buildGroupContext(from);
   const estimatedTokens = Math.ceil((query.length + extraContext.length) / 3) + 200;
@@ -116,7 +125,6 @@ async function handleAIMessage(sock, message, from, sender, body, senderNum) {
       recordFailure(model, reason);
       console.warn(`[AI] ❌ ${model} falhou (${reason}): ${err.message}`);
 
-      // Remove do histórico para não duplicar na próxima tentativa
       try { popLastUserMessage(sender); } catch (_) {}
     }
   }

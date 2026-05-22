@@ -1,14 +1,14 @@
 {
   "115809867276438@lid": {
-    "xp": 3026,
+    "xp": 5451,
     "level": 15,
-    "coins": 3939,
+    "coins": 407,
     "streak": 0,
-    "lastDaily": 1779316799821,
+    "lastDaily": 1779413367655,
     "lastWeekly": 1778936867368,
-    "lastXP": 1779371276726,
-    "lastActive": 1779371276726,
-    "messages": 1123,
+    "lastXP": 1779420933520,
+    "lastActive": 1779420933520,
+    "messages": 1189,
     "inventory": {
       "frames": [
         "default",
@@ -53,22 +53,22 @@
       "legend_speaker"
     ],
     "stats": {
-      "totalXP": 38491,
-      "totalMessages": 1123,
-      "totalCoins": 110627,
+      "totalXP": 40916,
+      "totalMessages": 1189,
+      "totalCoins": 146120,
       "minigamesWon": 235,
       "eventsWon": 0,
-      "dailyClaimed": 5,
+      "dailyClaimed": 6,
       "weeklyClaimed": 1
     },
     "roleta": {
-      "lastUsed": 1779292650998,
+      "lastUsed": 1779413352491,
       "cooldownMs": 1800000,
       "girosGratis": 0,
       "girosProtegidos": 0,
       "vergonha": {
-        "ativa": true,
-        "expiraEm": 1779379050999
+        "ativa": false,
+        "expiraEm": 0
       },
       "multiplicador": {
         "ativo": false,
@@ -77,21 +77,21 @@
       },
       "proximaEscolha": false
     },
-    "lastTrabalhar": 1779371171484,
-    "lastPescar": 1779325186614,
-    "lastMinerar": 1779320998115,
-    "lastCrime": 1779326868671
+    "lastTrabalhar": 1779413824401,
+    "lastPescar": 1779403133113,
+    "lastMinerar": 1779412239273,
+    "lastCrime": 1779413854722
   },
   "211360323530764@lid": {
-    "xp": 484,
-    "level": 3,
-    "coins": 300,
+    "xp": 44,
+    "level": 4,
+    "coins": 500,
     "streak": 1,
     "lastDaily": null,
     "lastWeekly": null,
-    "lastXP": 1779369419073,
-    "lastActive": 1779369419073,
-    "messages": 82,
+    "lastXP": 1779414296737,
+    "lastActive": 1779414296737,
+    "messages": 89,
     "inventory": {
       "frames": [
         "default"
@@ -111,9 +111,9 @@
       "first_message"
     ],
     "stats": {
-      "totalXP": 866,
-      "totalMessages": 82,
-      "totalCoins": 300,
+      "totalXP": 945,
+      "totalMessages": 89,
+      "totalCoins": 500,
       "minigamesWon": 0,
       "eventsWon": 0,
       "dailyClaimed": 0,
@@ -121,15 +121,15 @@
     }
   },
   "8779265507455@lid": {
-    "xp": 618,
+    "xp": 995,
     "level": 8,
-    "coins": 1117,
+    "coins": 1496,
     "streak": 0,
-    "lastDaily": 1779235903964,
+    "lastDaily": 1779403710865,
     "lastWeekly": 1778942315160,
-    "lastXP": 1779370216807,
-    "lastActive": 1779370216807,
-    "messages": 469,
+    "lastXP": 1779417585971,
+    "lastActive": 1779417585971,
+    "messages": 493,
     "inventory": {
       "frames": [
         "default"
@@ -157,12 +157,12 @@
       "gamer"
     ],
     "stats": {
-      "totalXP": 7408,
-      "totalMessages": 469,
-      "totalCoins": 5217,
-      "minigamesWon": 16,
+      "totalXP": 7885,
+      "totalMessages": 493,
+      "totalCoins": 7092,
+      "minigamesWon": 17,
       "eventsWon": 0,
-      "dailyClaimed": 4,
+      "dailyClaimed": 5,
       "weeklyClaimed": 1
     },
     "roleta": {
@@ -182,10 +182,10 @@
       "proximaEscolha": false,
       "cooldownPunitivoAte": 1779151439367
     },
-    "lastMinerar": 1779235546228,
-    "lastTrabalhar": 1779286249462,
-    "lastPescar": 1779239906492,
-    "lastCrime": 1779286310390
+    "lastMinerar": 1779416242939,
+    "lastTrabalhar": 1779416123396,
+    "lastPescar": 1779416215712,
+    "lastCrime": 1779416155722
   },
   "146862816395400@lid": {
     "xp": 71,
@@ -264,15 +264,15 @@
     }
   },
   "255044352012341@lid": {
-    "xp": 426,
-    "level": 4,
-    "coins": 700,
-    "streak": 0,
+    "xp": 41,
+    "level": 5,
+    "coins": 1050,
+    "streak": 1,
     "lastDaily": null,
     "lastWeekly": null,
-    "lastXP": 1779290020191,
-    "lastActive": 1779290020191,
-    "messages": 125,
+    "lastXP": 1779415932819,
+    "lastActive": 1779415932819,
+    "messages": 140,
     "inventory": {
       "frames": [
         "default"
@@ -290,13 +290,14 @@
     },
     "achievements": [
       "first_message",
-      "chatterbox"
+      "chatterbox",
+      "first_win"
     ],
     "stats": {
-      "totalXP": 1327,
-      "totalMessages": 125,
-      "totalCoins": 700,
-      "minigamesWon": 0,
+      "totalXP": 1742,
+      "totalMessages": 140,
+      "totalCoins": 1050,
+      "minigamesWon": 3,
       "eventsWon": 0,
       "dailyClaimed": 0,
       "weeklyClaimed": 0
@@ -319,15 +320,15 @@
     }
   },
   "103186824212488@lid": {
-    "xp": 899,
-    "level": 5,
-    "coins": 2542,
+    "xp": 28,
+    "level": 6,
+    "coins": 2491,
     "streak": 0,
     "lastDaily": 1779320930014,
     "lastWeekly": null,
-    "lastXP": 1779327407125,
-    "lastActive": 1779327407125,
-    "messages": 187,
+    "lastXP": 1779413131062,
+    "lastActive": 1779413131062,
+    "messages": 202,
     "inventory": {
       "frames": [
         "default"
@@ -349,9 +350,9 @@
       "first_win"
     ],
     "stats": {
-      "totalXP": 2600,
-      "totalMessages": 187,
-      "totalCoins": 2845,
+      "totalXP": 2847,
+      "totalMessages": 202,
+      "totalCoins": 12288,
       "minigamesWon": 2,
       "eventsWon": 0,
       "dailyClaimed": 2,
@@ -373,9 +374,9 @@
       },
       "proximaEscolha": false
     },
-    "lastTrabalhar": 1779325002699,
-    "lastPescar": 1779324377235,
-    "lastMinerar": 1779324398539,
+    "lastTrabalhar": 1779413124259,
+    "lastPescar": 1779413119773,
+    "lastMinerar": 1779413111613,
     "lastCrime": 1779321031731
   },
   "25276469784813@lid": {
@@ -417,15 +418,15 @@
     }
   },
   "224120151273544@lid": {
-    "xp": 2167,
-    "level": 10,
-    "coins": 0,
+    "xp": 468,
+    "level": 11,
+    "coins": 144,
     "streak": 0,
-    "lastDaily": 1779316786902,
+    "lastDaily": 1779413409635,
     "lastWeekly": 1778946569317,
-    "lastXP": 1779371597224,
-    "lastActive": 1779371597224,
-    "messages": 279,
+    "lastXP": 1779417942244,
+    "lastActive": 1779417942244,
+    "messages": 306,
     "inventory": {
       "frames": [
         "default",
@@ -434,7 +435,9 @@
         "crimson",
         "thunder",
         "galaxy",
-        "root"
+        "root",
+        "shadow",
+        "void"
       ],
       "fonts": [
         "default",
@@ -467,22 +470,22 @@
       "level_10"
     ],
     "stats": {
-      "totalXP": 15493,
-      "totalMessages": 279,
-      "totalCoins": 193717,
+      "totalXP": 16956,
+      "totalMessages": 306,
+      "totalCoins": 231223,
       "minigamesWon": 37,
       "eventsWon": 0,
-      "dailyClaimed": 3,
+      "dailyClaimed": 4,
       "weeklyClaimed": 1
     },
     "roleta": {
-      "lastUsed": 1779325072443,
+      "lastUsed": 1779414010856,
       "cooldownMs": 1800000,
       "girosGratis": 0,
-      "girosProtegidos": 1,
+      "girosProtegidos": 0,
       "vergonha": {
-        "ativa": true,
-        "expiraEm": 1779376939739
+        "ativa": false,
+        "expiraEm": 0
       },
       "multiplicador": {
         "ativo": false,
@@ -491,21 +494,21 @@
       },
       "proximaEscolha": false
     },
-    "lastTrabalhar": 1779371177875,
-    "lastCrime": 1779371200805,
-    "lastPescar": 1779371223620,
-    "lastMinerar": 1779371231057
+    "lastTrabalhar": 1779416025891,
+    "lastCrime": 1779415919676,
+    "lastPescar": 1779417987812,
+    "lastMinerar": 1779415904064
   },
   "28635268403272@lid": {
-    "xp": 246,
+    "xp": 1032,
     "level": 6,
-    "coins": 58,
+    "coins": 308,
     "streak": 1,
-    "lastDaily": 1779323151715,
+    "lastDaily": 1779413628219,
     "lastWeekly": 1778969109674,
-    "lastXP": 1779371205272,
-    "lastActive": 1779371205272,
-    "messages": 237,
+    "lastXP": 1779420118073,
+    "lastActive": 1779420118073,
+    "messages": 304,
     "inventory": {
       "frames": [
         "default"
@@ -526,12 +529,12 @@
       "chatterbox"
     ],
     "stats": {
-      "totalXP": 3265,
-      "totalMessages": 237,
-      "totalCoins": 14574,
+      "totalXP": 4051,
+      "totalMessages": 304,
+      "totalCoins": 14874,
       "minigamesWon": 0,
       "eventsWon": 0,
-      "dailyClaimed": 3,
+      "dailyClaimed": 4,
       "weeklyClaimed": 1
     },
     "roleta": {
@@ -552,8 +555,8 @@
       "cooldownPunitivoAte": 1779240433764
     },
     "lastCrime": 1779238916321,
-    "lastTrabalhar": 1779239865215,
-    "lastPescar": 1779233960932,
+    "lastTrabalhar": 1779375465572,
+    "lastPescar": 1779375522069,
     "lastMinerar": 1779234633804
   },
   "188579649204274@lid": {
@@ -595,15 +598,15 @@
     }
   },
   "196838988755135@lid": {
-    "xp": 180,
+    "xp": 200,
     "level": 3,
-    "coins": 400,
+    "coins": 505,
     "streak": 1,
     "lastDaily": null,
     "lastWeekly": null,
-    "lastXP": 1779325811729,
-    "lastActive": 1779325811729,
-    "messages": 45,
+    "lastXP": 1779420915968,
+    "lastActive": 1779420915968,
+    "messages": 56,
     "inventory": {
       "frames": [
         "default"
@@ -616,17 +619,21 @@
       "equipped": {
         "frame": "default",
         "font": "default",
-        "aura": null
-      }
+        "aura": null,
+        "relic": null
+      },
+      "relics": [
+        "garra_do_lobo"
+      ]
     },
     "achievements": [
       "first_message",
       "first_win"
     ],
     "stats": {
-      "totalXP": 562,
-      "totalMessages": 45,
-      "totalCoins": 400,
+      "totalXP": 966,
+      "totalMessages": 56,
+      "totalCoins": 1405,
       "minigamesWon": 1,
       "eventsWon": 0,
       "dailyClaimed": 0,
@@ -634,15 +641,15 @@
     }
   },
   "248554555711501@lid": {
-    "xp": 327,
+    "xp": 400,
     "level": 4,
     "coins": 700,
     "streak": 0,
     "lastDaily": null,
     "lastWeekly": null,
-    "lastXP": 1779370230489,
-    "lastActive": 1779370230489,
-    "messages": 108,
+    "lastXP": 1779414296734,
+    "lastActive": 1779414296734,
+    "messages": 114,
     "inventory": {
       "frames": [
         "default"
@@ -663,8 +670,8 @@
       "chatterbox"
     ],
     "stats": {
-      "totalXP": 1228,
-      "totalMessages": 108,
+      "totalXP": 1301,
+      "totalMessages": 114,
       "totalCoins": 700,
       "minigamesWon": 0,
       "eventsWon": 0,
@@ -765,15 +772,15 @@
     }
   },
   "177494489587757@lid": {
-    "xp": 898,
+    "xp": 912,
     "level": 5,
     "coins": 2176,
     "streak": 0,
     "lastDaily": 1779285814192,
     "lastWeekly": 1779182668103,
-    "lastXP": 1779368724587,
-    "lastActive": 1779368724587,
-    "messages": 143,
+    "lastXP": 1779386139920,
+    "lastActive": 1779386139920,
+    "messages": 144,
     "inventory": {
       "frames": [
         "default"
@@ -795,8 +802,8 @@
       "chatterbox"
     ],
     "stats": {
-      "totalXP": 2749,
-      "totalMessages": 143,
+      "totalXP": 2763,
+      "totalMessages": 144,
       "totalCoins": 5033,
       "minigamesWon": 4,
       "eventsWon": 0,
@@ -958,15 +965,15 @@
     "lastPescar": 1779235308733
   },
   "160791043023036@lid": {
-    "xp": 1853,
+    "xp": 1928,
     "level": 8,
-    "coins": 3114,
+    "coins": 3214,
     "streak": 0,
-    "lastDaily": 1779228337880,
+    "lastDaily": 1779388901954,
     "lastWeekly": 1779037382720,
-    "lastXP": 1779365885792,
-    "lastActive": 1779365885792,
-    "messages": 406,
+    "lastXP": 1779405278580,
+    "lastActive": 1779405278580,
+    "messages": 408,
     "inventory": {
       "frames": [
         "default"
@@ -993,12 +1000,12 @@
       "chatterbox"
     ],
     "stats": {
-      "totalXP": 8343,
-      "totalMessages": 406,
-      "totalCoins": 4014,
+      "totalXP": 8418,
+      "totalMessages": 408,
+      "totalCoins": 4114,
       "minigamesWon": 47,
       "eventsWon": 0,
-      "dailyClaimed": 3,
+      "dailyClaimed": 4,
       "weeklyClaimed": 1
     },
     "roleta": {
@@ -1023,15 +1030,15 @@
     "lastTrabalhar": 1779234558667
   },
   "90353747112153@lid": {
-    "xp": 83,
+    "xp": 97,
     "level": 2,
     "coins": 150,
-    "streak": 1,
+    "streak": 0,
     "lastDaily": null,
     "lastWeekly": null,
-    "lastXP": 1779228354789,
-    "lastActive": 1779228354789,
-    "messages": 15,
+    "lastXP": 1779412130064,
+    "lastActive": 1779412130064,
+    "messages": 16,
     "inventory": {
       "frames": [
         "default"
@@ -1051,8 +1058,8 @@
       "first_message"
     ],
     "stats": {
-      "totalXP": 183,
-      "totalMessages": 15,
+      "totalXP": 197,
+      "totalMessages": 16,
       "totalCoins": 150,
       "minigamesWon": 0,
       "eventsWon": 0,
@@ -1061,15 +1068,15 @@
     }
   },
   "4480338800748@lid": {
-    "xp": 1069,
+    "xp": 1460,
     "level": 6,
-    "coins": 1154,
+    "coins": 481,
     "streak": 0,
     "lastDaily": 1779321019971,
     "lastWeekly": 1779022223660,
-    "lastXP": 1779321048478,
-    "lastActive": 1779321048478,
-    "messages": 224,
+    "lastXP": 1779417902349,
+    "lastActive": 1779417902349,
+    "messages": 255,
     "inventory": {
       "frames": [
         "default"
@@ -1092,9 +1099,9 @@
       "gamer"
     ],
     "stats": {
-      "totalXP": 4138,
-      "totalMessages": 224,
-      "totalCoins": 9682,
+      "totalXP": 4529,
+      "totalMessages": 255,
+      "totalCoins": 10209,
       "minigamesWon": 11,
       "eventsWon": 0,
       "dailyClaimed": 3,
@@ -1116,9 +1123,9 @@
       },
       "proximaEscolha": false
     },
-    "lastTrabalhar": 1779320921128,
-    "lastPescar": 1779320954365,
-    "lastMinerar": 1779320964648
+    "lastTrabalhar": 1779395477522,
+    "lastPescar": 1779395494928,
+    "lastMinerar": 1779395502201
   },
   "136099611566280@lid": {
     "xp": 37,
@@ -1252,15 +1259,15 @@
     }
   },
   "238430999076991@lid": {
-    "xp": 421,
-    "level": 3,
-    "coins": 727,
+    "xp": 302,
+    "level": 4,
+    "coins": 3209,
     "streak": 1,
-    "lastDaily": 1779230412540,
+    "lastDaily": 1779388646736,
     "lastWeekly": null,
-    "lastXP": 1779318408094,
-    "lastActive": 1779318408094,
-    "messages": 46,
+    "lastXP": 1779417190604,
+    "lastActive": 1779417190604,
+    "messages": 72,
     "inventory": {
       "frames": [
         "default"
@@ -1281,12 +1288,12 @@
       "first_win"
     ],
     "stats": {
-      "totalXP": 803,
-      "totalMessages": 46,
-      "totalCoins": 977,
-      "minigamesWon": 5,
+      "totalXP": 1203,
+      "totalMessages": 72,
+      "totalCoins": 5839,
+      "minigamesWon": 6,
       "eventsWon": 0,
-      "dailyClaimed": 1,
+      "dailyClaimed": 2,
       "weeklyClaimed": 0
     },
     "roleta": {
@@ -1306,7 +1313,7 @@
       "proximaEscolha": false
     },
     "lastPescar": 1779234147708,
-    "lastTrabalhar": 1779234184851
+    "lastTrabalhar": 1779405415864
   },
   "82192839536878@lid": {
     "xp": 49,
@@ -1349,7 +1356,7 @@
   "96125998637060@lid": {
     "xp": 52,
     "level": 4,
-    "coins": 1950,
+    "coins": 450,
     "streak": 0,
     "lastDaily": 1779356796592,
     "lastWeekly": 1779182731379,
@@ -1364,12 +1371,16 @@
         "default"
       ],
       "auras": [],
-      "boxes": [],
+      "boxes": {},
       "equipped": {
         "frame": "default",
         "font": "default",
-        "aura": null
-      }
+        "aura": null,
+        "relic": null
+      },
+      "relics": [
+        "cristal_de_furia"
+      ]
     },
     "achievements": [
       "first_message",
@@ -1446,15 +1457,15 @@
     }
   },
   "45776382218384@lid": {
-    "xp": 523,
-    "level": 7,
-    "coins": 59,
+    "xp": 1788,
+    "level": 8,
+    "coins": 540,
     "streak": 0,
-    "lastDaily": 1779221058441,
+    "lastDaily": 1779378442988,
     "lastWeekly": 1779210938939,
-    "lastXP": 1779325398894,
-    "lastActive": 1779325398894,
-    "messages": 81,
+    "lastXP": 1779405920374,
+    "lastActive": 1779405920374,
+    "messages": 86,
     "inventory": {
       "frames": [
         "default"
@@ -1462,7 +1473,9 @@
       "fonts": [
         "default"
       ],
-      "relics": [],
+      "relics": [
+        "anel_de_regeneracao"
+      ],
       "auras": [],
       "boxes": {},
       "equipped": {
@@ -1479,17 +1492,17 @@
       "rich"
     ],
     "stats": {
-      "totalXP": 4997,
-      "totalMessages": 81,
-      "totalCoins": 11194,
+      "totalXP": 8314,
+      "totalMessages": 86,
+      "totalCoins": 29187,
       "minigamesWon": 22,
       "eventsWon": 0,
-      "dailyClaimed": 2,
+      "dailyClaimed": 3,
       "weeklyClaimed": 1
     },
     "roleta": {
-      "lastUsed": 1779325380856,
-      "cooldownMs": 1800000,
+      "lastUsed": 1779393908797,
+      "cooldownMs": 3600000,
       "girosGratis": 0,
       "girosProtegidos": 0,
       "vergonha": {
@@ -1501,12 +1514,13 @@
         "fator": 1,
         "expiraEm": 0
       },
-      "proximaEscolha": false
+      "proximaEscolha": false,
+      "cooldownPunitivoAte": 1779397508803
     },
-    "lastTrabalhar": 1779325389397,
-    "lastCrime": 1779325215648,
-    "lastPescar": 1779296938404,
-    "lastMinerar": 1779325479188
+    "lastTrabalhar": 1779403057850,
+    "lastCrime": 1779405909501,
+    "lastPescar": 1779403102566,
+    "lastMinerar": 1779405932749
   },
   "40815460143216@lid": {
     "xp": 231,
@@ -1541,7 +1555,7 @@
     "stats": {
       "totalXP": 613,
       "totalMessages": 13,
-      "totalCoins": 1100,
+      "totalCoins": 2100,
       "minigamesWon": 0,
       "eventsWon": 0,
       "dailyClaimed": 1,
@@ -1701,15 +1715,15 @@
     }
   },
   "135858757865676@lid": {
-    "xp": 6,
-    "level": 3,
-    "coins": 98,
+    "xp": 439,
+    "level": 6,
+    "coins": 0,
     "streak": 0,
-    "lastDaily": 1779308390117,
-    "lastWeekly": null,
-    "lastXP": 1779371103170,
-    "lastActive": 1779371103170,
-    "messages": 17,
+    "lastDaily": 1779402766506,
+    "lastWeekly": 1779413384615,
+    "lastXP": 1779416055176,
+    "lastActive": 1779416055176,
+    "messages": 46,
     "inventory": {
       "frames": [
         "default"
@@ -1728,25 +1742,28 @@
       }
     },
     "achievements": [
-      "first_message"
+      "first_message",
+      "rich",
+      "first_win",
+      "millionaire"
     ],
     "stats": {
-      "totalXP": 408,
-      "totalMessages": 17,
-      "totalCoins": 3398,
-      "minigamesWon": 0,
+      "totalXP": 3852,
+      "totalMessages": 46,
+      "totalCoins": 181225,
+      "minigamesWon": 4,
       "eventsWon": 0,
-      "dailyClaimed": 1,
-      "weeklyClaimed": 0
+      "dailyClaimed": 2,
+      "weeklyClaimed": 1
     },
     "roleta": {
-      "lastUsed": 0,
+      "lastUsed": 1779413334868,
       "cooldownMs": 1800000,
       "girosGratis": 0,
       "girosProtegidos": 0,
       "vergonha": {
-        "ativa": false,
-        "expiraEm": 0
+        "ativa": true,
+        "expiraEm": 1779499734870
       },
       "multiplicador": {
         "ativo": false,
@@ -1755,9 +1772,10 @@
       },
       "proximaEscolha": false
     },
-    "lastTrabalhar": 1779323532527,
-    "lastCrime": 1779323509145,
-    "lastPescar": 1779323524254
+    "lastTrabalhar": 1779413831826,
+    "lastCrime": 1779413843738,
+    "lastPescar": 1779415916756,
+    "lastMinerar": 1779413865431
   },
   "213434574631100@lid": {
     "xp": 33,
@@ -1878,5 +1896,63 @@
       "dailyClaimed": 0,
       "weeklyClaimed": 0
     }
+  },
+  "11103144800274@lid": {
+    "xp": 74,
+    "level": 1,
+    "coins": 113,
+    "streak": 0,
+    "lastDaily": null,
+    "lastWeekly": null,
+    "lastXP": 1779417998927,
+    "lastActive": 1779417998927,
+    "messages": 5,
+    "inventory": {
+      "frames": [
+        "default"
+      ],
+      "fonts": [
+        "default"
+      ],
+      "relics": [],
+      "auras": [],
+      "boxes": [],
+      "equipped": {
+        "frame": "default",
+        "font": "default",
+        "aura": null,
+        "relic": null
+      }
+    },
+    "achievements": [
+      "first_message"
+    ],
+    "stats": {
+      "totalXP": 74,
+      "totalMessages": 5,
+      "totalCoins": 113,
+      "minigamesWon": 0,
+      "eventsWon": 0,
+      "dailyClaimed": 0,
+      "weeklyClaimed": 0
+    },
+    "roleta": {
+      "lastUsed": 0,
+      "cooldownMs": 1800000,
+      "girosGratis": 0,
+      "girosProtegidos": 0,
+      "vergonha": {
+        "ativa": false,
+        "expiraEm": 0
+      },
+      "multiplicador": {
+        "ativo": false,
+        "fator": 1,
+        "expiraEm": 0
+      },
+      "proximaEscolha": false
+    },
+    "lastTrabalhar": 1779416873512,
+    "lastPescar": 1779417004230
   }
 }

@@ -1,8 +1,8 @@
 'use strict';
 
 const axios = require('axios');
-const { getBattleBonus } = require('../utils/shop.js');
-const { addXP, removeXP } = require('../utils/economy.js');
+const { getBattleBonus }           = require('../utils/shop.js');
+const { addXP, removeXP, getUser, updateUser } = require('../utils/economy.js');
 
 const SERVER = 'https://sentinel-game-3.onrender.com';
 const DIFFS  = ['easy', 'medium', 'hard', 'ai'];
@@ -45,8 +45,24 @@ function pollResult(sock, from, roomId, p1Jid, p2Jid) {
         const winnerBot = data.winner === 'p1' ? data.p1IsBot : data.p2IsBot;
         const loserBot  = data.winner === 'p1' ? data.p2IsBot : data.p1IsBot;
 
+        // ── XP ──────────────────────────────────────────────
         if (!winnerBot) addXP(winnerJid, 100, 'duel_win_web');
         if (!loserBot)  removeXP(loserJid, 100);
+
+        // ── FIX: incrementa minigamesWon para o vencedor humano ──
+        if (!winnerBot) {
+          try {
+            const u = getUser(winnerJid);
+            if (u) {
+              if (!u.stats) u.stats = {};
+              u.stats.minigamesWon = (u.stats.minigamesWon || 0) + 1;
+              updateUser(winnerJid, u);
+              console.log(`[DUEL] minigamesWon atualizado para ${winnerJid.split('@')[0]}: ${u.stats.minigamesWon}`);
+            }
+          } catch (err) {
+            console.error('[DUEL] Erro ao atualizar minigamesWon:', err.message);
+          }
+        }
 
         const wLabel = winnerBot ? '🤖 Sentinel' : `@${winnerJid.split('@')[0]}`;
         const lLabel = loserBot  ? '🤖 Sentinel' : `@${loserJid.split('@')[0]}`;

@@ -54,6 +54,29 @@ body{background:var(--bg);color:var(--txt);font-family:system-ui,sans-serif;disp
 
 <div id="reconn">🔄 Reconectando...</div>
 
+<!-- ═══════════════════════════════════════════════════════════
+     ÁUDIO — URLs de CDN direto (não página HTML)
+     ═══════════════════════════════════════════════════════════
+     Troque os src abaixo se necessário pelos links de download
+     direto dos respectivos serviços.
+     ══════════════════════════════════════════════════════════ -->
+<audio id="snd-click"
+       src="https://www.myinstants.com/media/sounds/leappad3-click-sound.mp3"
+       preload="auto"></audio>
+
+<audio id="snd-bg"
+       src="https://cdn.pixabay.com/audio/2024/11/12/audio_62ce3e1f57.mp3"
+       preload="auto"
+       loop></audio>
+
+<audio id="snd-win"
+       src="https://cdn.pixabay.com/audio/2025/01/08/audio_6b5d16de55.mp3"
+       preload="auto"></audio>
+
+<audio id="snd-lose"
+       src="https://cdn.pixabay.com/audio/2023/10/30/audio_b7c1b7c8f9.mp3"
+       preload="auto"></audio>
+
 <div class="wrap">
 
 <div id="loading" style="margin-top:40vh;text-align:center">
@@ -114,7 +137,6 @@ body{background:var(--bg);color:var(--txt);font-family:system-ui,sans-serif;disp
     <div class="end-s" id="end-s"></div>
   </div>
   <div class="log" id="end-log" style="max-height:280px"></div>
-  <!-- Ações pós-duelo -->
   <div class="end-actions">
     <button class="btn wa w3" onclick="openWhatsApp()">
       💬 Voltar ao WhatsApp
@@ -122,7 +144,7 @@ body{background:var(--bg);color:var(--txt);font-family:system-ui,sans-serif;disp
   </div>
 </div>
 
-</div>
+</div><!-- /.wrap -->
 
 <div id="spov" class="ov hidden">
   <div class="sp-panel">
@@ -134,6 +156,99 @@ body{background:var(--bg);color:var(--txt);font-family:system-ui,sans-serif;disp
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
+// ═══════════════════════════════════════════════════════════
+// SISTEMA DE ÁUDIO
+// ═══════════════════════════════════════════════════════════
+
+const Audio = (() => {
+  // Referências
+  const _click = document.getElementById('snd-click');
+  const _bg    = document.getElementById('snd-bg');
+  const _win   = document.getElementById('snd-win');
+  const _lose  = document.getElementById('snd-lose');
+
+  // Volume padrão
+  if (_bg)   _bg.volume   = 0.35;
+  if (_win)  _win.volume  = 0.75;
+  if (_lose) _lose.volume = 0.75;
+  if (_click) _click.volume = 0.5;
+
+  // Guarda se a música de fundo já está tocando
+  let _bgPlaying  = false;
+  // Guarda se o som de fim já foi tocado (evita duplicação)
+  let _endPlayed  = false;
+
+  // Tenta reproduzir — ignora erro de autoplay silenciosamente
+  function _play(el) {
+    if (!el) return;
+    const p = el.play();
+    if (p && typeof p.catch === 'function') p.catch(() => {});
+  }
+
+  // Para e reseta um elemento de áudio
+  function _stop(el) {
+    if (!el) return;
+    el.pause();
+    el.currentTime = 0;
+  }
+
+  return {
+    // Clique nos botões — reinicia para tocar mesmo se clicado rápido
+    click() {
+      if (!_click) return;
+      _click.currentTime = 0;
+      _play(_click);
+    },
+
+    // Inicia a música de fundo em loop
+    startBg() {
+      if (_bgPlaying || !_bg) return;
+      _bg.currentTime = 0;
+      _play(_bg);
+      _bgPlaying = true;
+    },
+
+    // Para a música de fundo imediatamente
+    stopBg() {
+      if (!_bg) return;
+      _stop(_bg);
+      _bgPlaying = false;
+    },
+
+    // Toca vitória ou derrota uma única vez e para a música
+    playEnd(won) {
+      if (_endPlayed) return;
+      _endPlayed = true;
+      this.stopBg();
+      if (won) _play(_win);
+      else     _play(_lose);
+    },
+
+    // Reset completo (útil se a página for reutilizada)
+    reset() {
+      _endPlayed = false;
+      _bgPlaying = false;
+      _stop(_bg);
+      _stop(_win);
+      _stop(_lose);
+    },
+  };
+})();
+
+// ═══════════════════════════════════════════════════════════
+// APLICA SOM DE CLIQUE EM TODOS OS BOTÕES (incluindo futuros)
+// ═══════════════════════════════════════════════════════════
+
+// Delegação: captura cliques em qualquer .btn dentro do documento
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.btn, .scard, .cls-btn');
+  if (btn && !btn.disabled) Audio.click();
+}, true);
+
+// ═══════════════════════════════════════════════════════════
+// DADOS DOS FEITIÇOS (exibição no painel)
+// ═══════════════════════════════════════════════════════════
+
 const SP_DATA = {
   bola_de_fogo:  { name:'Bola de Fogo',   icon:'🔥', cost:25, desc:'20-30 dano + queimadura' },
   raio:          { name:'Raio',            icon:'⚡', cost:30, desc:'25-40 dano + stun'       },
@@ -147,6 +262,10 @@ const SP_DATA = {
   correntes:     { name:'Correntes',       icon:'⛓️', cost:25, desc:'5-10 dano + bloqueia esquiva' },
 };
 
+// ═══════════════════════════════════════════════════════════
+// PARÂMETROS DA URL
+// ═══════════════════════════════════════════════════════════
+
 const params = new URLSearchParams(location.search);
 const ROOM   = params.get('room');
 const PLAYER = params.get('player');
@@ -158,13 +277,19 @@ if (!ROOM || !['p1','p2'].includes(PLAYER)) {
   throw new Error('invalid link');
 }
 
+// ═══════════════════════════════════════════════════════════
+// SOCKET.IO
+// ═══════════════════════════════════════════════════════════
+
 const socket = io("https://sentinel-game-3.onrender.com", {
   reconnectionDelay: 1500,
-  reconnectionAttempts: 10
+  reconnectionAttempts: 10,
 });
 
-let state = null;
-let sent  = false;
+let state      = null;
+let sent       = false;
+// Controla se a música já foi iniciada (evita reiniciar a cada state)
+let bgStarted  = false;
 
 socket.on('connect', () => {
   document.getElementById('reconn').style.display = 'none';
@@ -187,15 +312,34 @@ socket.on('error', msg => {
   el.style.color = '#ef4444';
 });
 
+// ═══════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════
+
 const el  = id => document.getElementById(id);
 const esc = s  => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const pct = (v, m) => (Math.max(0, v) / Math.max(1, m) * 100).toFixed(1) + '%';
+
+// ═══════════════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════════════
 
 function render() {
   if (!state) return;
   el('loading').classList.add('hidden');
 
-  if (state.phase === 'ended') { renderEnd(); return; }
+  // ── FIM DA PARTIDA ──────────────────────────────────────
+  if (state.phase === 'ended') {
+    renderEnd();
+    return;
+  }
+
+  // ── PARTIDA EM ANDAMENTO ────────────────────────────────
+  // Inicia a música de fundo apenas uma vez
+  if (!bgStarted) {
+    bgStarted = true;
+    Audio.startBg();
+  }
 
   el('battle').classList.remove('hidden');
   el('rbadge').textContent = `Round ${state.round}`;
@@ -253,26 +397,43 @@ function render() {
   }
 }
 
+// ═══════════════════════════════════════════════════════════
+// TELA FINAL
+// ═══════════════════════════════════════════════════════════
+
 function renderEnd() {
   el('battle').classList.add('hidden');
   el('endscreen').classList.remove('hidden');
+
   const me = state[PLAYER];
+  let playerWon = false;
+
   if (state.winner === 'draw') {
     el('end-e').textContent = '🤝';
     el('end-t').textContent = 'EMPATE!';
     el('end-s').textContent = 'Ambos caíram!';
+    // Empate: não toca nem vitória nem derrota — apenas para a música
+    Audio.stopBg();
   } else if (state.winner === PLAYER) {
+    playerWon = true;
     el('end-e').textContent = '🏆';
     el('end-t').textContent = 'VITÓRIA!';
     el('end-s').innerHTML   = `❤️ HP restante: ${Math.max(0, me?.hp || 0)}/${me?.maxHp || 120}<br>🎉 +100 XP`;
+    Audio.playEnd(true);
   } else {
     el('end-e').textContent = '💀';
     el('end-t').textContent = 'DERROTA';
-    el('end-s').textContent = 'Você perdeu. +25 XP';
+    el('end-s').textContent = 'Você perdeu. -100 XP';
+    Audio.playEnd(false);
   }
+
   if (state.log?.length)
     el('end-log').innerHTML = state.log.slice(-60).map(l => `<p>${esc(l)}</p>`).join('');
 }
+
+// ═══════════════════════════════════════════════════════════
+// AÇÕES
+// ═══════════════════════════════════════════════════════════
 
 window.act = action => {
   if (sent || !state || state.phase !== 'fighting') return;
@@ -297,8 +458,8 @@ window.showSp = () => {
     d.className = `scard${disabled ? ' dis' : ''}`;
 
     let costLabel = `🔵 ${cost}`;
-    if (cdLeft > 0)     costLabel += ` <span class="cd-badge">(CD: ${cdLeft}r)</span>`;
-    else if (noMana)    costLabel += ` <span style="color:#f87171">(sem mana)</span>`;
+    if (cdLeft > 0)  costLabel += ` <span class="cd-badge">(CD: ${cdLeft}r)</span>`;
+    else if (noMana) costLabel += ` <span style="color:#f87171">(sem mana)</span>`;
 
     d.innerHTML = `
       <div class="si">${s.icon}</div>
@@ -324,10 +485,8 @@ window.openWhatsApp = function() {
   const ua = navigator.userAgent.toLowerCase();
   const isMobile = /android|iphone|ipad|ipod/.test(ua);
   if (isMobile) {
-    // Tenta abrir o app; se não instalado, nada acontece visualmente
     window.location.href = 'whatsapp://';
   } else {
-    // Desktop: abre WhatsApp Web numa nova aba
     window.open('https://web.whatsapp.com', '_blank');
   }
 };

@@ -17,7 +17,6 @@ const { checkAdultLink }                       = require('./utils/antiadult.js')
 
 const { handleForcaReply }  = require('./events/forcaHandler.js');
 const { handleDuelReply }   = require('./events/duelHandler.js');
-const { handleDuoReply }    = require('./events/duoHandler.js');
 const { handleXPGain }      = require('./events/xpHandler.js');
 const { handleQuizReply }   = require('./commands/quiz.js');
 
@@ -25,9 +24,31 @@ const { handleQuizReply }   = require('./commands/quiz.js');
 const { isAfk, getAfk, removeAfk, formatAusente } = require('./utils/afk.js');
 
 // ── GAME HANDLER — importado aqui para ser chamado ANTES da IA
-const { handleGameReply }   = require('./events/gameHandler.js');
+const { handleGameReply } = require('./events/gameHandler.js');
 
-const ALLOWED_GROUP = MAIN_GROUP;
+// ─────────────────────────────────────────────────────────────
+// COMUNIDADE — grupos oficiais e regras por grupo
+// ─────────────────────────────────────────────────────────────
+
+const GROUPS = {
+  BATE_PAPO:  '120363426463059849@g.us',
+  MINIGAMES:  '120363409922944526@g.us',
+  FIGURINHAS: '120363427141816341@g.us',
+  BOT:        '120363407851845223@g.us',
+  EDITS:      '120363426207941515@g.us',
+};
+
+// Apenas esses grupos são atendidos pelo bot
+const ALLOWED_GROUPS = new Set(Object.values(GROUPS));
+
+// Comandos exclusivos do grupo de minigames
+const MINIGAME_COMMANDS = new Set([
+  'forca', 'duel', 'duo', 'quiz', 'roleta',
+  'apostar', 'trabalhar', 'crime', 'pescar', 'minerar',
+  'caixa', 'abrir',
+]);
+
+const MINIGAMES_GROUP_NAME = '🎮 MINIGAMES';
 
 // ─────────────────────────────────────────────────────────────
 // DEDUPLICAÇÃO
@@ -110,23 +131,21 @@ setInterval(() => {
 
 // ─────────────────────────────────────────────────────────────
 // [AFK] HELPER — coleta JIDs mencionados na mensagem
-// Cobre: menções explícitas (@número) e reply (mensagem citada)
 // ─────────────────────────────────────────────────────────────
 
-function getMentionedJids(msgContent) {
+function getMentionedJids(msgContent, botJid) {
   const mentioned = new Set();
 
-  // Menções explícitas (@número)
   const explicitMentions =
     msgContent?.extendedTextMessage?.contextInfo?.mentionedJid ?? [];
   for (const jid of explicitMentions) mentioned.add(jid);
 
-  // Reply — participante da mensagem citada
   const quotedParticipant =
-    msgContent?.extendedTextMessage?.contextInfo?.participant ??
-    msgContent?.extendedTextMessage?.contextInfo?.remoteJid ??
-    null;
-  if (quotedParticipant) mentioned.add(quotedParticipant);
+    msgContent?.extendedTextMessage?.contextInfo?.participant ?? null;
+
+  if (quotedParticipant && quotedParticipant !== botJid) {
+    mentioned.add(quotedParticipant);
+  }
 
   return [...mentioned];
 }
@@ -138,15 +157,19 @@ function getMentionedJids(msgContent) {
 async function handleMessage(sock, message) {
   const { key, message: msgContent } = message;
 
-  if (!msgContent)                              return;
-  if (key.remoteJid === 'status@broadcast')     return;
-  if (!key.remoteJid)                           return;
-  if (key.fromMe)                               return;
+  if (!msgContent)                          return;
+  if (key.remoteJid === 'status@broadcast') return;
+  if (!key.remoteJid)                       return;
+  if (key.fromMe)                           return;
 
   const from    = key.remoteJid;
   const isGroup = from.endsWith('@g.us');
 
-  if (from !== ALLOWED_GROUP) return;
+  // ── Whitelist: só atende os grupos oficiais da comunidade
+  if (isGroup && !ALLOWED_GROUPS.has(from)) return;
+
+  // ── Newsletters do WhatsApp são ignoradas
+  if (!isGroup && from.endsWith('@newsletter')) return;
 
   if (isDuplicate(key.id)) {
     console.log(`[HANDLER] Duplicata ignorada: ${key.id}`);
@@ -189,8 +212,8 @@ async function handleMessage(sock, message) {
     }
   }
 
-  // ── ANTI-SPAM
-  if (isGroup && sender) {
+  // ── ANTI-SPAM (desativado no grupo de figurinhas)
+  if (isGroup && sender && from !== GROUPS.FIGURINHAS) {
     try {
       const spamDetected = await checkSpam(wsock, message, from, sender);
       if (spamDetected) return;
@@ -235,7 +258,6 @@ async function handleMessage(sock, message) {
   const body       = text.trim();
 
   // ── [AFK] AUTO-REMOVE: usuário enviou mensagem → sai do AFK automaticamente
-  // Exceção: !afk (o próprio comando vai redefinir o AFK logo adiante)
   if (sender && isAfk(sender)) {
     const isSettingAfk = body.toLowerCase().startsWith(`${config.prefix}afk`);
 
@@ -256,13 +278,13 @@ async function handleMessage(sock, message) {
     }
   }
 
-  // ── [AFK] VERIFICAR MENÇÕES: alguém mencionou um usuário AFK?
-  if (sender) {
+  // ── [AFK] VERIFICAR MENÇÕES
+  if (sender && !body.startsWith(config.prefix)) {
     try {
-      const mentionedJids = getMentionedJids(msgContent);
+      const botJid        = sock.user?.id ?? null;
+      const mentionedJids = getMentionedJids(msgContent, botJid);
 
       for (const mentionedJid of mentionedJids) {
-        // Ignora auto-menção
         if (mentionedJid === sender) continue;
 
         if (isAfk(mentionedJid)) {
@@ -300,57 +322,59 @@ async function handleMessage(sock, message) {
   }
 
   // ─────────────────────────────────────────────────────────
-  // !! ATENÇÃO: GAME HANDLER DEVE VIR ANTES DA IA !!
-  // A IA interceptaria respostas como "1", "2", "hit", "stand"
-  // antes do game handler ter chance de processá-las.
+  // GAME HANDLERS — exclusivos do grupo de minigames
+  //
+  // handleGameReply processa sessões ativas (respostas dentro
+  // de minigames em andamento). Só faz sentido no grupo certo.
   // ─────────────────────────────────────────────────────────
 
-  // ── GAME SESSIONS (minigames interativos: blackjack, trabalhar, crime...)
-  try {
-    const handledByGame = await handleGameReply(wsock, message, from, sender, body);
-    if (handledByGame) {
-      console.log(`[HANDLER] Resposta de minigame processada: ${senderNum}`);
-      return;
+  if (from === GROUPS.MINIGAMES) {
+    try {
+      const handledByGame = await handleGameReply(wsock, message, from, sender, body);
+      if (handledByGame) {
+        console.log(`[HANDLER] Resposta de minigame processada: ${senderNum}`);
+        return;
+      }
+    } catch (err) {
+      console.error('[HANDLER] Erro no gameReply:', err.message, err.stack);
     }
-  } catch (err) {
-    console.error('[HANDLER] Erro no gameReply:', err.message, err.stack);
+
+    try {
+      const handledByQuiz = await handleQuizReply(wsock, message, from, sender, body);
+      if (handledByQuiz) return;
+    } catch (err) {
+      console.error('[HANDLER] Erro no quizReply:', err.message);
+    }
+
+    try {
+      const handledByForca = await handleForcaReply(wsock, message, from, sender, body);
+      if (handledByForca) return;
+    } catch (err) {
+      console.error('[HANDLER] Erro no forcaReply:', err.message);
+    }
+
+    try {
+      const handledByDuel = await handleDuelReply(wsock, message, from, sender, body);
+      if (handledByDuel) return;
+    } catch (err) {
+      console.error('[HANDLER] Erro no duelReply:', err.message);
+    }
+
+    try {
+      const handledByDuo = await handleDuoReply(wsock, message, from, sender, body);
+      if (handledByDuo) return;
+    } catch (err) {
+      console.error('[HANDLER] Erro no duoReply:', err.message);
+    }
   }
 
-  // ── QUIZ
+  // ── IA
+  // No grupo 🤖 BOT, a IA responde todas as mensagens automaticamente
+  // (passa autoRespond=true para o aiHandler).
+  // Nos demais grupos, responde apenas quando chamada normalmente.
   try {
-    const handledByQuiz = await handleQuizReply(wsock, message, from, sender, body);
-    if (handledByQuiz) return;
-  } catch (err) {
-    console.error('[HANDLER] Erro no quizReply:', err.message);
-  }
-
-  // ── FORCA
-  try {
-    const handledByForca = await handleForcaReply(wsock, message, from, sender, body);
-    if (handledByForca) return;
-  } catch (err) {
-    console.error('[HANDLER] Erro no forcaReply:', err.message);
-  }
-
-  // ── DUELO
-  try {
-    const handledByDuel = await handleDuelReply(wsock, message, from, sender, body);
-    if (handledByDuel) return;
-  } catch (err) {
-    console.error('[HANDLER] Erro no duelReply:', err.message);
-  }
-
-  // ── DUO
-  try {
-    const handledByDuo = await handleDuoReply(wsock, message, from, sender, body);
-    if (handledByDuo) return;
-  } catch (err) {
-    console.error('[HANDLER] Erro no duoReply:', err.message);
-  }
-
-  // ── IA (chamada DEPOIS dos game handlers)
-  try {
-    const aiHandled = await handleAIMessage(wsock, message, from, sender, body, senderNum);
+    const autoRespond = (from === GROUPS.BOT && !body.startsWith(config.prefix));
+    const aiHandled   = await handleAIMessage(wsock, message, from, sender, body, senderNum, autoRespond);
     if (aiHandled) return;
   } catch (err) {
     console.error('[HANDLER] Erro no aiHandler:', err.message);
@@ -367,6 +391,14 @@ async function handleMessage(sock, message) {
     `[${localTime}] Comando: ${config.prefix}${commandName}` +
     ` | De: ${senderNum} | Em: ${isGroup ? 'Grupo' : 'Privado'}`
   );
+
+  // ── Bloqueia minigames fora do grupo correto
+  if (MINIGAME_COMMANDS.has(commandName) && from !== GROUPS.MINIGAMES) {
+    await wsock.sendMessage(from, {
+      text: `🎮 Os comandos de minigame só funcionam no grupo *${MINIGAMES_GROUP_NAME}*.\nVá pra lá e tente de novo.`,
+    });
+    return;
+  }
 
   const commandPath = path.join(__dirname, 'commands', `${commandName}.js`);
 
