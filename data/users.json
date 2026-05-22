@@ -1457,15 +1457,15 @@
     }
   },
   "45776382218384@lid": {
-    "xp": 1779,
+    "xp": 1789,
     "level": 8,
     "coins": 124,
     "streak": 0,
     "lastDaily": 1779483072887,
     "lastWeekly": 1779210938939,
-    "lastXP": 1779483064363,
-    "lastActive": 1779483072887,
-    "messages": 86,
+    "lastXP": 1779489573648,
+    "lastActive": 1779489573648,
+    "messages": 87,
     "inventory": {
       "frames": [
         "default"
@@ -1492,8 +1492,8 @@
       "rich"
     ],
     "stats": {
-      "totalXP": 8405,
-      "totalMessages": 86,
+      "totalXP": 8415,
+      "totalMessages": 87,
       "totalCoins": 31237,
       "minigamesWon": 22,
       "eventsWon": 0,
